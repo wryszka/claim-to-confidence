@@ -1,0 +1,46 @@
+{
+  "run_id": "RUN-INITIAL",
+  "entity": "Bricksurance SE",
+  "line_of_business": "Commercial Motor liability",
+  "accident_year": 2023,
+  "currency": "EUR",
+  "valuation_date": "2026-06-30",
+  "information_cutoff": "2026-07-03",
+  "seed": 20260630,
+  "engine_version": "1.0",
+  "basis": "gross, undiscounted indemnity",
+  "assumptions": {
+    "selected_incurred_cdf": "1.20",
+    "selected_paid_cdf": "1.70",
+    "earned_premium_eur": 120000000,
+    "expected_loss_ratio": "0.80",
+    "selection_weights": {
+      "incurred_chain_ladder": "0.5",
+      "incurred_bornhuetter_ferguson": "0.5"
+    },
+    "quota_share_pct": "0.20"
+  },
+  "inputs": {
+    "paid": "58000000.00",
+    "case": "23000000.00",
+    "incurred_cdf": "1.20",
+    "paid_cdf": "1.70",
+    "earned_premium": "120000000.00",
+    "expected_loss_ratio": "0.80",
+    "quota_share_pct": "0.20"
+  },
+  "indications_eur_millions": {
+    "reported_incurred": 81.0,
+    "incurred_chain_ladder": 97.2,
+    "paid_chain_ladder": 98.6,
+    "expected_ultimate": 96.0,
+    "incurred_bornhuetter_ferguson": 97.0
+  },
+  "results_eur_millions": {
+    "selected_ultimate": 97.1,
+    "gross_outstanding": 39.1,
+    "gross_ibnr": 16.1,
+    "ceded_outstanding": 7.82,
+    "net_outstanding": 31.28
+  }
+}

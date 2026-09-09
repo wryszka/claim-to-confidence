@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>From Claim to Confidence — Bricksurance SE</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --faint:#94a3b8;
+    --border:#e6eaf1; --accent:#4f46e5; --accent2:#2563eb;
+    --good:#15803d; --good-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7;
+    --danger:#b91c1c; --danger-bg:#fee2e2; --info:#0369a1; --info-bg:#e0f2fe;
+    --muted-bg:#f1f5f9;
+    --nav:#0b1220; --nav2:#141d31;
+    --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+    font-synthesis:none;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
+  a{color:var(--accent2);text-decoration:none}
+  /* ---- sidebar ---- */
+  .sidebar{width:256px;flex:0 0 256px;background:linear-gradient(180deg,var(--nav),var(--nav2));
+    color:#e2e8f0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{padding:22px 22px 14px}
+  .brand .ey{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8b9cc0}
+  .brand h1{font-size:19px;margin:6px 0 2px;font-weight:700;letter-spacing:-.01em;color:#fff}
+  .brand .sub{font-size:12px;color:#93a3c4}
+  nav{padding:10px}
+  nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;
+    color:#c6d0e4;padding:11px 13px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:500}
+  nav button .ix{width:22px;height:22px;border-radius:6px;background:#22304d;display:grid;place-items:center;
+    font-size:12px;font-weight:700;color:#9fb2d6}
+  nav button:hover{background:#1b2740;color:#fff}
+  nav button.active{background:linear-gradient(90deg,var(--accent),#6366f1);color:#fff;box-shadow:var(--shadow)}
+  nav button.active .ix{background:rgba(255,255,255,.22);color:#fff}
+  .side-foot{margin-top:auto;padding:16px 20px;font-size:11px;color:#7f8fb3;border-top:1px solid #1c2740}
+  /* ---- main ---- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .ctxbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 26px;display:flex;
+    align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+  .ctxbar .chip{font-size:12px;color:var(--muted)}
+  .ctxbar .chip b{color:var(--ink);font-weight:600}
+  .synthetic{margin-left:auto;font-size:11px;color:var(--warn);background:var(--warn-bg);
+    padding:4px 10px;border-radius:999px;font-weight:600}
+  .content{padding:26px;max-width:1180px;width:100%}
+  h2.screen{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
+  .screen-sub{color:var(--muted);margin:0 0 20px;font-size:14px}
+  /* ---- hero ---- */
+  .hero{background:radial-gradient(1200px 400px at 15% -20%,#26346b 0%,#0b1220 60%);
+    border-radius:20px;padding:34px 36px;color:#fff;box-shadow:var(--shadow);margin-bottom:22px}
+  .hero .ey{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#93a3c4}
+  .hero h3{font-size:29px;line-height:1.2;margin:10px 0 8px;font-weight:750;letter-spacing:-.02em;max-width:760px}
+  .hero p.lead{color:#c3cde3;margin:0 0 26px;max-width:680px}
+  .heronums{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .hn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:18px 20px}
+  .hn .lab{font-size:12px;color:#aeb9d6;text-transform:uppercase;letter-spacing:.08em}
+  .hn .big{font-size:38px;font-weight:760;letter-spacing:-.03em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+  .hn .fine{font-size:12.5px;color:#a9b4d2}
+  .hn.info .big{color:#7dd3fc}.hn.warn .big{color:#fcd34d}.hn.good .big{color:#86efac}
+  /* ---- ripple ---- */
+  .ripple{display:flex;align-items:stretch;gap:0;margin:22px 0 8px;overflow-x:auto;padding-bottom:6px}
+  .rnode{flex:1;min-width:158px;background:var(--card);border:1px solid var(--border);border-radius:14px;
+    padding:15px 16px;position:relative;cursor:pointer;transition:transform .12s,box-shadow .12s}
+  .rnode:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:#cfd6e6}
+  .rnode+.rnode{margin-left:26px}
+  .rnode:not(:last-child)::after{content:"→";position:absolute;right:-22px;top:50%;transform:translateY(-50%);
+    color:var(--faint);font-size:20px;font-weight:700}
+  .rnode .rk{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em}
+  .rnode .rl{font-weight:650;margin:2px 0 6px;font-size:14px}
+  .rnode .rv{font-size:20px;font-weight:730;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  .rnode .rs-sub{font-size:11.5px;color:var(--muted);margin-top:5px;min-height:30px}
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;margin-top:8px}
+  .pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.info{background:var(--info-bg);color:var(--info)}.pill.muted{background:var(--muted-bg);color:var(--muted)}
+  .pill.danger{background:var(--danger-bg);color:var(--danger)}
+  /* ---- callout / cards ---- */
+  .callout{border-radius:14px;padding:18px 20px;margin:14px 0;display:flex;gap:14px;align-items:flex-start}
+  .callout.good{background:var(--good-bg);border:1px solid #bbf7d0}
+  .callout.amber{background:var(--warn-bg);border:1px solid #fde68a}
+  .callout .ic{font-size:22px;line-height:1}
+  .callout b{font-weight:700}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;
+    box-shadow:var(--shadow);margin-bottom:18px}
+  .card h4{margin:0 0 4px;font-size:16px}
+  .card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  /* ---- tables ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+  th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
+  td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+  tr.hi{background:#fffbeb}
+  .up{color:var(--danger);font-weight:600}.flat{color:var(--muted)}
+  .mono{font-variant-numeric:tabular-nums}
+  .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
+  .tag.pass{background:var(--good-bg);color:var(--good)}.tag.drop{background:var(--danger-bg);color:var(--danger)}
+  .tag.quar{background:var(--warn-bg);color:var(--warn)}
+  /* ---- explainer ---- */
+  .explain{background:linear-gradient(90deg,#eef2ff,#f5f3ff);border:1px solid #e0e7ff;border-radius:12px;
+    padding:0;margin-bottom:18px;overflow:hidden}
+  .explain summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:13.5px;color:#4338ca;list-style:none}
+  .explain summary::-webkit-details-marker{display:none}
+  .explain summary::before{content:"❓ ";}
+  .explain .body{padding:0 16px 14px;font-size:13.5px;color:#3730a3}
+  .disclaimer{background:var(--warn-bg);border:1px solid #fde68a;border-radius:12px;padding:11px 16px;
+    font-size:12.5px;color:#78350f;margin-bottom:18px}
+  .four{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0}
+  .four .fc{background:var(--muted-bg);border:1px solid var(--border);border-radius:12px;padding:14px}
+  .four .fc .n{font-size:24px;font-weight:730;letter-spacing:-.02em}
+  .four .fc .l{font-size:12px;color:var(--muted);margin-top:3px}
+  .slider-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin:10px 0}
+  input[type=range]{flex:1;min-width:220px;accent-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-weight:600;
+    font-size:13.5px;cursor:pointer}
+  .btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+  .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px}
+  .kv b{font-variant-numeric:tabular-nums}
+  .loading{color:var(--muted);padding:40px;text-align:center}
+  .why{color:var(--faint);cursor:help;font-size:12px;border-bottom:1px dotted var(--faint)}
+  code.acct{font-size:12px;background:var(--muted-bg);padding:1px 6px;border-radius:5px}
+  @media(max-width:900px){.heronums,.grid2,.four{grid-template-columns:1fr}.sidebar{display:none}}
+</style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="ey">Bricksurance SE</div>
+      <h1>Claim → Confidence</h1>
+      <div class="sub">Connected reserving journey</div>
+    </div>
+    <nav id="nav"></nav>
+    <div class="side-foot">Synthetic data · governed on Databricks<br/>Live figures computed from Unity Catalog</div>
+  </aside>
+  <div class="main">
+    <div class="ctxbar" id="ctxbar"><span class="chip">Loading…</span></div>
+    <div class="content" id="content"><div class="loading">Loading the journey…</div></div>
+  </div>
+
+<script>
+const SCREENS=[
+  {id:"decision",ix:"A",label:"The decision"},
+  {id:"readiness",ix:"B",label:"Data readiness"},
+  {id:"practitioner",ix:"C",label:"Practitioner"},
+  {id:"impact",ix:"D",label:"Change impact"},
+  {id:"review",ix:"E",label:"Review & approval"},
+  {id:"evidence",ix:"F",label:"Decision & evidence"},
+];
+let META=null, CUR="decision";
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+async function api(p){const r=await fetch(p);const j=await r.json();if(j&&j.error)throw new Error(j.error);return j;}
+const m=v=>`€${Number(v).toFixed(v%1===0?1:2)}m`;
+const signed=v=>`${v>=0?"+":"−"}€${Math.abs(v).toFixed(Math.abs(v)%1===0?1:2)}m`;
+
+function renderNav(){
+  const n=$("#nav");n.innerHTML="";
+  SCREENS.forEach(s=>{
+    const b=el("button",s.id===CUR?"active":"");
+    b.innerHTML=`<span class="ix">${s.ix}</span> ${s.label}`;
+    b.onclick=()=>go(s.id);n.appendChild(b);
+  });
+}
+function renderCtx(){
+  if(!META)return;
+  $("#ctxbar").innerHTML=
+    `<span class="chip"><b>${META.entity}</b></span>`+
+    `<span class="chip">Cohort <b>${META.line_of_business} · AY ${META.accident_year}</b></span>`+
+    `<span class="chip">Valuation <b>${META.valuation_date}</b></span>`+
+    `<span class="chip">Cutoffs <b>${META.cutoff_initial} → ${META.cutoff_corrected}</b></span>`+
+    `<span class="chip">Currency <b>${META.currency}</b></span>`+
+    `<span class="synthetic">● Synthetic insurer data</span>`;
+}
+function explain(title,body){return `<details class="explain"><summary>${title}</summary><div class="body">${body}</div></details>`;}
+const DISCLAIMER=`<div class="disclaimer"><b>About this demo.</b> Bricksurance SE is a fictional insurer and all data is synthetic. Figures are computed live on Databricks from a governed data model; they are not a real regulatory result and assert no compliance certification.</div>`;
+
+async function go(id){
+  CUR=id;renderNav();
+  const c=$("#content");c.innerHTML=`<div class="loading">Loading…</div>`;
+  try{await RENDER[id](c);}catch(e){c.innerHTML=`<div class="card"><h4>Could not load</h4><div class="desc">${e.message}</div></div>`;}
+  window.scrollTo(0,0);
+}
+
+function countUp(node,target,suffix,dp){
+  const dur=650,t0=performance.now();
+  function tick(t){let p=Math.min(1,(t-t0)/dur);p=1-Math.pow(1-p,3);
+    node.textContent=(target<0?"−":"+")+"€"+(Math.abs(target)*p).toFixed(dp)+suffix;
+    if(p<1)requestAnimationFrame(tick);}
+  requestAnimationFrame(tick);
+}
+
+const RENDER={
+  async decision(c){
+    const d=await api("/api/decision");const h=d.hero;
+    c.innerHTML=`
+      <div class="hero">
+        <div class="ey">From Claim to Confidence</div>
+        <h3>One €2m claim correction. A connected reserve decision. Evidence at every step.</h3>
+        <p class="lead">A single change to one motor claim, traced — with enforced authority and a full audit trail — through the reserve, the reinsurance treaty, the finance ledger and the capital hand-off.</p>
+        <div class="heronums">
+          <div class="hn info"><div class="lab">Claim correction</div><div class="big" id="h0">+€0.0m</div><div class="fine">Case estimate on one major bodily-injury claim</div></div>
+          <div class="hn warn"><div class="lab">Gross reserve effect</div><div class="big" id="h1">+€0.0m</div><div class="fine">Selected gross outstanding · ${m(h.gross_before)} → ${m(h.gross_after)}</div></div>
+          <div class="hn good"><div class="lab">Net effect after reinsurance</div><div class="big" id="h2">+€0.0m</div><div class="fine">${m(h.net_before)} → ${m(h.net_after)} · 20% quota share</div></div>
+        </div>
+      </div>
+      <div class="ripple" id="ripple"></div>
+      <div class="callout good"><div class="ic">🛡️</div><div><b>The quiet hero: no double count.</b> The €2.0m case correction is <b>already booked</b> in finance. The platform proposes booking only the <b>€${h.residual_to_book.toFixed(1)}m residual</b> that remains — never the full amount twice. A disconnected spreadsheet cannot know this; the connected platform does.</div></div>
+      ${explain("What am I seeing?",`This is the executive view of the whole decision. Each tile is a real, live figure computed on Databricks from the governed data model. The row below traces the same correction across every domain it touches. Click any step to open the underlying record. Suggested question: <b>“${d.prompt}”</b>`)}
+      ${DISCLAIMER}`;
+    const rip=$("#ripple");
+    d.ripple.forEach(n=>{
+      const node=el("div","rnode");
+      node.innerHTML=`<div class="rk">${n.key}</div><div class="rl">${n.label}</div><div class="rv">${n.value}</div><div class="rs-sub">${n.sub}</div><span class="pill ${n.tone}">${n.status}</span>`;
+      const map={claim:"readiness",reserve:"practitioner",reinsurance:"impact",finance:"evidence",capital:"impact"};
+      node.onclick=()=>go(map[n.key]||"impact");
+      rip.appendChild(node);
+    });
+    countUp($("#h0"),h.case_correction,"m",1);
+    countUp($("#h1"),h.gross_delta,"m",1);
+    countUp($("#h2"),h.net_delta,"m",2);
+  },
+
+  async readiness(c){
+    const d=await api("/api/readiness");
+    const drows=d.deliveries.map(x=>{
+      const tag=x.dq_status==="PASS"?`<span class="tag pass">PASS</span>`:`<span class="tag quar">${x.dq_status}</span>`;
+      return `<tr class="${x.status==='QUARANTINED'?'hi':''}"><td class="mono">${x.delivery_id}</td><td>${x.source_system}</td><td class="mono">${x.received_ts.replace('T',' ')}</td><td class="mono">${x.information_cutoff}</td><td>${x.status}</td><td>${tag}</td></tr>`;
+    }).join("");
+    const snaps=d.snapshots.map(s=>`<tr><td><b>${s.label}</b><br/><span class="flat mono">cutoff ${s.cutoff}</span></td><td class="num">${m(s.paid)}</td><td class="num">${m(s.case)}</td><td class="num">${m(s.incurred)}</td><td class="num">${s.claim_count}</td><td><span class="tag pass">${s.quality_gate}</span></td></tr>`).join("");
+    c.innerHTML=`
+      <h2 class="screen">Data readiness</h2>
+      <p class="screen-sub">Source feeds, control totals, and quality gates — before any reserve is calculated.</p>
+      ${explain("What am I seeing?","The source deliveries that feed this valuation, and the population and financial control totals derived from the claim ledger. The corrected valuation only releases for calculation once every required control passes. The triangle is derived from these transactions — it is never a separately-keyed dataset that can drift.")}
+      <div class="callout amber"><div class="ic">⚠️</div><div><b>Duplicate delivery caught.</b> ${d.duplicate.note} Quarantined rows: <b>${d.duplicate.rows.length}</b>.</div></div>
+      <div class="card"><h4>Source deliveries</h4><div class="desc">The quarterly Commercial Motor extract plus the late correction and its duplicate re-delivery.</div>
+        <table><thead><tr><th>Delivery</th><th>Source</th><th>Received</th><th>Cutoff</th><th>Status</th><th>Data quality</th></tr></thead><tbody>${drows}</tbody></table></div>
+      <div class="card"><h4>Control totals — same valuation, two information cutoffs</h4><div class="desc">Derived from the claim ledger. The €2m correction is known only from the 6 July cutoff.</div>
+        <table><thead><tr><th>Snapshot</th><th class="num">Paid</th><th class="num">Case</th><th class="num">Incurred</th><th class="num">Claims</th><th>Gate</th></tr></thead><tbody>${snaps}</tbody></table>
+        <div style="margin-top:10px;font-size:13px;color:var(--muted)">Accepted transactions: <b>${d.control_totals.accepted_transactions}</b> across <b>${d.control_totals.claims}</b> claims (duplicate excluded).</div></div>
+      ${DISCLAIMER}`;
+  },
+
+  async practitioner(c){
+    const d=await api("/api/practitioner");
+    const dg=d.diagnostics, sel=d.selection, cc=d.cutoffs.corrected;
+    function diagRow(meas){const g=dg[meas];return `<tr><td>${meas==='INCURRED'?'Incurred':'Paid'} cumulative development factor</td><td class="num">${g.empirical_cdf.toFixed(3)}</td><td class="num"><b>${g.selected_cdf.toFixed(2)}</b></td><td class="num ${Math.abs(g.gap_pct)<2?'flat':'up'}">${g.gap_pct>=0?'+':''}${g.gap_pct}%</td></tr>`;}
+    // incurred triangle
+    const tri=dg.INCURRED.triangle;const ays=Object.keys(tri).sort();
+    const lags=[...new Set(ays.flatMap(a=>Object.keys(tri[a])))].map(Number).sort((a,b)=>a-b);
+    const thead=`<tr><th>AY</th>${lags.map(l=>`<th class="num">${l}</th>`).join("")}</tr>`;
+    const tbody=ays.map(a=>`<tr><td><b>${a}</b></td>${lags.map(l=>`<td class="num ${a==='2023'&&l==3?'':''}">${tri[a][l]!=null?tri[a][l].toFixed(1):''}</td>`).join("")}</tr>`).join("");
+    const meth=[["Reported incurred (paid + case)",cc.reported_incurred],["Incurred chain-ladder",cc.incurred_chain_ladder],["Paid chain-ladder",cc.paid_chain_ladder],["Expected ultimate (premium × loss ratio)",cc.expected_ultimate],["Incurred Bornhuetter-Ferguson",cc.incurred_bornhuetter_ferguson]]
+      .map(r=>`<tr><td>${r[0]}</td><td class="num">${m(r[1])}</td></tr>`).join("");
+    c.innerHTML=`
+      <h2 class="screen">Practitioner workspace</h2>
+      <p class="screen-sub">The triangle, the method indications, and the actuary's selection — with the diagnostics behind it.</p>
+      ${explain("What am I seeing?","The selected development factors are <b>prescribed, governed actuarial selections</b> (1.20 incurred, 1.70 paid), not automatically fitted. The empirical factors from the triangle are shown separately as a diagnostic — they sit close to the selection, which is the point. Every method indication below is computed live from these inputs.")}
+      <div class="card"><h4>Selection policy</h4><div class="desc">${sel.policy}</div>
+        <table><thead><tr><th>Diagnostic</th><th class="num">Empirical</th><th class="num">Selected</th><th class="num">Gap</th></tr></thead><tbody>${diagRow('INCURRED')}${diagRow('PAID')}</tbody></table>
+        <div style="margin-top:12px;font-size:13px;color:var(--muted)"><span class="why" title="${sel.incurred_rationale.replace(/"/g,'&quot;')}">Why 1.20 incurred? (hover)</span> &nbsp;·&nbsp; <span class="why" title="${sel.paid_rationale.replace(/"/g,'&quot;')}">Why 1.70 paid? (hover)</span></div></div>
+      <div class="grid2">
+        <div class="card"><h4>Method indications — corrected cutoff</h4><div class="desc">AY2023, gross undiscounted, EUR millions.</div><table><tbody>${meth}<tr><td><b>Selected ultimate</b></td><td class="num"><b>${m(cc.selected_ultimate)}</b></td></tr></tbody></table></div>
+        <div class="card"><h4>What-if — move the selection weight</h4><div class="desc">Blend of incurred chain-ladder and Bornhuetter-Ferguson. Proves the engine is genuinely sensitive; the hero numbers are never retained after a change.</div>
+          <div class="slider-row"><span>BF</span><input type="range" id="wt" min="0" max="100" value="50"/><span>CL</span></div>
+          <div id="wtout"></div></div>
+      </div>
+      <div class="card"><h4>Incurred development triangle</h4><div class="desc">Cumulative incurred by accident year × development lag (EUR millions), observed at 30 June 2026. AY2023's current diagonal reconciles to the claim ledger.</div>
+        <div style="overflow-x:auto"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>
+      ${DISCLAIMER}`;
+    const wt=$("#wt"),out=$("#wtout");
+    async function upd(){const w=(+wt.value)/100;const r=await api("/api/selection/recompute?cl_weight="+w);
+      out.innerHTML=`<div class="kv"><span>Chain-ladder weight</span><b>${(r.cl_weight*100).toFixed(0)}%</b></div>
+        <div class="kv"><span>Selected ultimate</span><b>${m(r.selected_ultimate)}</b></div>
+        <div class="kv"><span>Net outstanding</span><b>${m(r.net_outstanding)}</b></div>
+        <div class="kv"><span>Δ vs 50/50 policy</span><b class="${r.delta_vs_policy>=0?'up':'flat'}">${signed(r.delta_vs_policy)}</b></div>`;}
+    wt.oninput=upd;upd();
+  },
+
+  async impact(c){
+    const d=await api("/api/change-impact");
+    const cmp=d.comparison.map(r=>`<tr><td>${r.item}</td><td class="num">${m(r.initial)}</td><td class="num">${m(r.corrected)}</td><td class="num ${r.change>0?'up':'flat'}">${signed(r.change)}</td></tr>`).join("");
+    const mr=d.method_response;
+    const methRows=[["Incurred chain-ladder",mr.incurred_chain_ladder],["Incurred Bornhuetter-Ferguson",mr.incurred_bornhuetter_ferguson],["Paid chain-ladder",mr.paid_chain_ladder]]
+      .map(r=>`<tr><td>${r[0]}</td><td class="num">${m(r[1].initial)}</td><td class="num">${m(r[1].corrected)}</td><td class="num ${r[1].change>0?'up':'flat'}">${signed(r[1].change)}</td></tr>`).join("");
+    const br=d.bridge, fn=d.four_numbers;
+    c.innerHTML=`
+      <h2 class="screen">Change impact</h2>
+      <p class="screen-sub">${d.note}</p>
+      ${explain("What am I seeing?","The same cohort valued at two information cutoffs. The left/right columns are both real, independently computed valuations. The bridge separates the €2.0m already posted from the €0.2m still to book — and the four numbers below are deliberately kept distinct because they are easy to confuse.")}
+      <div class="card"><h4>Selection & reinsurance — initial vs corrected</h4>
+        <table><thead><tr><th>Item</th><th class="num">Initial</th><th class="num">Corrected</th><th class="num">Change</th></tr></thead><tbody>${cmp}</tbody></table></div>
+      <div class="card"><h4>How each method responds</h4><div class="desc">Different methods react differently to the same €2m case change — which is exactly why the selection is a judgement, not a formula.</div>
+        <table><thead><tr><th>Method</th><th class="num">Initial</th><th class="num">Corrected</th><th class="num">Change</th></tr></thead><tbody>${methRows}</tbody></table></div>
+      <div class="card"><h4>The revision bridge</h4><div class="desc">Total revision versus the original position, split by what is already posted and what remains.</div>
+        <table><thead><tr><th>Movement</th><th class="num">Gross</th><th class="num">Ceded</th><th class="num">Net</th></tr></thead><tbody>
+          <tr><td>Case correction (already posted)</td><td class="num">${m(br.case_correction_posted.gross)}</td><td class="num">${m(br.case_correction_posted.ceded)}</td><td class="num">${m(br.case_correction_posted.net)}</td></tr>
+          <tr><td>Additional IBNR (to book)</td><td class="num">${m(br.additional_ibnr_to_book.gross)}</td><td class="num">${m(br.additional_ibnr_to_book.ceded)}</td><td class="num">${m(br.additional_ibnr_to_book.net)}</td></tr>
+          <tr class="hi"><td><b>Total revision</b></td><td class="num"><b>${m(br.total_revision.gross)}</b></td><td class="num"><b>${m(br.total_revision.ceded)}</b></td><td class="num"><b>${m(br.total_revision.net)}</b></td></tr>
+        </tbody></table></div>
+      <div class="card"><h4>Four numbers, kept distinct</h4>
+        <div class="four">
+          <div class="fc"><div class="n">+€${fn.method_indication_2_4.toFixed(1)}m</div><div class="l">Incurred chain-ladder method indication</div></div>
+          <div class="fc"><div class="n">+€${fn.selected_gross_2_2.toFixed(1)}m</div><div class="l">Selected gross movement (hero)</div></div>
+          <div class="fc"><div class="n">+€${fn.net_1_76.toFixed(2)}m</div><div class="l">Net undiscounted indemnity movement</div></div>
+          <div class="fc"><div class="n">+€${fn.residual_journal_0_2.toFixed(1)}m</div><div class="l">Residual finance journal only</div></div>
+        </div></div>
+      ${DISCLAIMER}`;
+  },
+
+  async review(c){
+    const [rv,fin]=await Promise.all([api("/api/review"),api("/api/finance")]);
+    const auth=rv.authority.map(a=>`<tr><td><b>${a.actor}</b></td><td>${a.may}</td><td style="color:var(--danger)">${a.may_not}</td></tr>`).join("");
+    const jrows=fin.journal.map(l=>`<tr><td><code class="acct">${l.account}</code></td><td class="num">${l.dr?m(l.dr):''}</td><td class="num">${l.cr?m(l.cr):''}</td></tr>`).join("");
+    c.innerHTML=`
+      <h2 class="screen">Review & approval</h2>
+      <p class="screen-sub">Who may do what — enforced by the backend, not a UI persona switch.</p>
+      ${explain("What am I seeing?","The exact proposal under review, the authority matrix the backend enforces, and a negative test showing an agent identity denied an action it is not permitted to take. Approval refers to the exact result, inputs and assumption set; a stale proposal cannot be approved.")}
+      <div class="grid2">
+        <div class="card"><h4>Proposal under review</h4>
+          <div class="kv"><span>Cohort</span><b>${rv.proposal.cohort}</b></div>
+          <div class="kv"><span>Selected ultimate</span><b>${m(rv.proposal.selected_ultimate)}</b></div>
+          <div class="kv"><span>Gross outstanding</span><b>${m(rv.proposal.gross_outstanding)}</b></div>
+          <div class="kv"><span>Net outstanding</span><b>${m(rv.proposal.net_outstanding)}</b></div>
+          <div class="kv"><span>Preparer</span><b>${rv.proposal.preparer}</b></div>
+          <div class="kv"><span>Reviewer</span><b>${rv.proposal.reviewer}</b></div>
+          <div class="kv"><span>Status</span><span class="pill good">${rv.proposal.status}</span></div></div>
+        <div class="card"><h4>Proposed residual journal</h4><div class="desc">${fin.note}</div>
+          <table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead><tbody>${jrows}
+            <tr class="hi"><td><b>Total</b></td><td class="num"><b>${m(fin.total_dr)}</b></td><td class="num"><b>${m(fin.total_cr)}</b></td></tr></tbody></table>
+          <div style="margin-top:8px"><span class="pill ${fin.balanced?'good':'danger'}">${fin.balanced?'Balanced (Dr = Cr)':'UNBALANCED'}</span></div></div>
+      </div>
+      <div class="card"><h4>Authority matrix</h4>
+        <table><thead><tr><th>Actor</th><th>May</th><th>May not</th></tr></thead><tbody>${auth}</tbody></table></div>
+      <div class="callout amber"><div class="ic">🚫</div><div><b>Negative test — ${rv.negative_test.scenario}.</b> Result: <b>${rv.negative_test.result}</b>. ${rv.negative_test.note}</div></div>
+      ${DISCLAIMER}`;
+  },
+
+  async evidence(c){
+    const d=await api("/api/evidence");
+    const audit=d.audit.map(a=>`<tr><td class="mono">${a.event_id}</td><td>${a.event_type}</td><td>${a.entity_id}</td><td>${a.detail}</td><td class="mono">${a.actor}</td></tr>`).join("");
+    const mans=d.manifests.map(mn=>{const r=mn.manifest.results_eur_millions||{};return `<div class="card"><h4>${mn.label} run — ${mn.run_id}</h4><div class="desc">Information cutoff ${mn.cutoff}. Retained inputs + results + assumptions.</div>
+      <div class="kv"><span>Selected ultimate</span><b>${r.selected_ultimate!=null?m(r.selected_ultimate):'—'}</b></div>
+      <div class="kv"><span>Gross outstanding</span><b>${r.gross_outstanding!=null?m(r.gross_outstanding):'—'}</b></div>
+      <div class="kv"><span>Net outstanding</span><b>${r.net_outstanding!=null?m(r.net_outstanding):'—'}</b></div></div>`;}).join("");
+    c.innerHTML=`
+      <h2 class="screen">Decision & evidence</h2>
+      <p class="screen-sub">The approved decision, its full evidence index, and deterministic reproduction.</p>
+      ${explain("What am I seeing?","One evidence index binding source, model, human decision and retained run manifests. "+d.reproduce_note)}
+      <div class="grid2">${mans}</div>
+      <div class="card"><h4>Reproduce this calculation</h4><div class="desc">Re-run the engine deterministically from the retained inputs and compare to the stored completed run.</div>
+        <button class="btn" id="repro">▶ Reproduce both runs</button><div id="reproout" style="margin-top:12px"></div></div>
+      <div class="card"><h4>Governance audit log</h4><div class="desc">Append-only record of selections, gates and the quarantined duplicate.</div>
+        <table><thead><tr><th>Event</th><th>Type</th><th>Entity</th><th>Detail</th><th>Actor</th></tr></thead><tbody>${audit}</tbody></table></div>
+      ${DISCLAIMER}`;
+    $("#repro").onclick=async()=>{const o=$("#reproout");o.innerHTML=`<span class="flat">Recomputing…</span>`;
+      const r=await api("/api/reproduce");
+      o.innerHTML=r.comparisons.map(x=>`<div class="kv"><span>${x.snapshot}</span><b>recomputed ${m(x.recomputed_selected_ultimate)} vs stored ${m(x.stored_selected_ultimate)} <span class="pill ${x.match?'good':'danger'}">${x.match?'MATCH':'MISMATCH'}</span></b></div>`).join("")+
+        `<div class="callout good" style="margin-top:12px"><div class="ic">✓</div><div>${r.all_match?'Both numerical versions reproduced exactly from retained inputs — no AI prose required.':'Reproduction mismatch — investigate.'}</div></div>`;};
+  },
+};
+
+(async function init(){
+  try{META=await api("/api/meta");}catch(e){}
+  renderNav();renderCtx();go("decision");
+})();
+</script>
+</body>
+</html>

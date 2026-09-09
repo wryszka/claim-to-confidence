@@ -1,0 +1,92 @@
+{
+  "run_id": "RUN-CORRECTED",
+  "entity": "Bricksurance SE",
+  "line_of_business": "Commercial Motor liability",
+  "accident_year": 2023,
+  "currency": "EUR",
+  "valuation_date": "2026-06-30",
+  "information_cutoff": "2026-07-06",
+  "seed": 20260630,
+  "engine_version": "1.0",
+  "basis": "gross, undiscounted indemnity",
+  "assumptions": {
+    "selected_incurred_cdf": "1.20",
+    "selected_paid_cdf": "1.70",
+    "earned_premium_eur": 120000000,
+    "expected_loss_ratio": "0.80",
+    "selection_weights": {
+      "incurred_chain_ladder": "0.5",
+      "incurred_bornhuetter_ferguson": "0.5"
+    },
+    "quota_share_pct": "0.20"
+  },
+  "inputs": {
+    "paid": "58000000.00",
+    "case": "25000000.00",
+    "incurred_cdf": "1.20",
+    "paid_cdf": "1.70",
+    "earned_premium": "120000000.00",
+    "expected_loss_ratio": "0.80",
+    "quota_share_pct": "0.20"
+  },
+  "indications_eur_millions": {
+    "reported_incurred": 83.0,
+    "incurred_chain_ladder": 99.6,
+    "paid_chain_ladder": 98.6,
+    "expected_ultimate": 96.0,
+    "incurred_bornhuetter_ferguson": 99.0
+  },
+  "results_eur_millions": {
+    "selected_ultimate": 99.3,
+    "gross_outstanding": 41.3,
+    "gross_ibnr": 16.3,
+    "ceded_outstanding": 8.26,
+    "net_outstanding": 33.04
+  },
+  "finance_eur_millions": {
+    "ledger_gross_outstanding": 41.1,
+    "residual_gross": 0.2,
+    "residual_ceded": 0.04,
+    "residual_net": 0.16,
+    "journal": [
+      {
+        "account": "GROSS_CLAIMS_EXPENSE",
+        "dr": 0.2,
+        "cr": 0.0
+      },
+      {
+        "account": "IBNR_LIABILITY",
+        "dr": 0.0,
+        "cr": 0.2
+      },
+      {
+        "account": "REINSURANCE_RECOVERABLE",
+        "dr": 0.04,
+        "cr": 0.0
+      },
+      {
+        "account": "REINSURANCE_RECOVERY_INCOME",
+        "dr": 0.0,
+        "cr": 0.04
+      }
+    ],
+    "balanced": true
+  },
+  "bridge_eur_millions": {
+    "case_correction_posted": {
+      "gross": 2.0,
+      "ceded": 0.4,
+      "net": 1.6
+    },
+    "additional_ibnr_to_book": {
+      "gross": 0.2,
+      "ceded": 0.04,
+      "net": 0.16
+    },
+    "total_revision": {
+      "gross": 2.2,
+      "ceded": 0.44,
+      "net": 1.76
+    }
+  }
+}

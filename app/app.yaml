@@ -1,0 +1,15 @@
+command: ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+env:
+  - name: CATALOG_NAME
+    value: "lr_dev_aws_us_catalog"
+  - name: SCHEMA_NAME
+    value: "claim_to_confidence"
+  - name: WAREHOUSE_ID
+    value: "a3b61648ea4809e3"
+  - name: FM_ENDPOINT
+    value: "databricks-claude-sonnet-5"
+  - name: ENTITY_NAME
+    value: "Bricksurance SE"
+  - name: HUB_APP_URL
+    value: "https://actuarial-workbench-7474656169654171.aws.databricksapps.com"
