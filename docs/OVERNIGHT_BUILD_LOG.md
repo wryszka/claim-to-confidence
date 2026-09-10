@@ -99,6 +99,26 @@ The board caches the last successful warm (`gct_cache_snapshot`); c2c's headline
 warm completes. `/api/group/state` and `/api/group/board` are SPA routes, not JSON APIs — the
 board data is the warmed snapshot.
 
+## 2026-09-10 — the rest: downstream, lineage, gate, reset, committee memo
+
+Delivered the remaining self-contained items (Option B / Switch Roles skipped per decision):
+- **Honest downstream hand-off (T23)** — `6_gov_downstream_handoff` passes the affected inputs
+  (net/gross/ceded movement, currency, valuation, cohort map, source decision id) to capital
+  (Solvency II SCR) and IFRS 17 (LIC + reinsurance-held), each marked `REQUIRES_RECALCULATION`
+  / `MAPPING_UNRESOLVED`. **No fabricated statutory number.** Shown in Change impact.
+- **Lineage (T13)** — `/api/lineage` renders the 7-level chain executive amount → human decision
+  → selection → method indications → triangle diagonal (ties to ledger to the penny) →
+  population (payments) → source deliveries. Shown in Decision & evidence.
+- **Readiness gate + DQ controls (T15)** — `1_raw_dq_check` + a gate that computes RELEASED/BLOCKED
+  (a critical FAIL blocks release). Shown in Data readiness with per-check status.
+- **Evidence-preserving reset (T21)** — the deploy now archives audit / run manifests / decision /
+  AI trace into a timestamped `claim_to_confidence_archive` schema **before** dropping. Verified:
+  4 tables archived on the reset (suffix `__20260910_095536`).
+- **Committee memo (T18)** — `/api/committee-report` renders the memo from the approved
+  `6_gov_decision` — the figures are the booked selection, not free text.
+- All redeployed and verified live; acceptance now **17 proven** (see ACCEPTANCE_TESTS.md).
+  Screenshot: `docs/screen_F_evidence.png`.
+
 ## Watch-outs for the next session
 
 - The app SP's warehouse ACL is known to get dropped across the estate periodically

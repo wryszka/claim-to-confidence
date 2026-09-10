@@ -239,6 +239,11 @@ const RENDER={
       <div class="card"><h4>Control totals — same valuation, two information cutoffs</h4><div class="desc">Derived from the claim ledger. The €2m correction is known only from the 6 July cutoff.</div>
         <table><thead><tr><th>Snapshot</th><th class="num">Paid</th><th class="num">Case</th><th class="num">Incurred</th><th class="num">Claims</th><th>Gate</th></tr></thead><tbody>${snaps}</tbody></table>
         <div style="margin-top:10px;font-size:13px;color:var(--muted)">Accepted transactions: <b>${d.control_totals.accepted_transactions}</b> across <b>${d.control_totals.claims}</b> claims (duplicate excluded).</div></div>
+      <div class="callout ${d.gate.status==='RELEASED'?'good':'amber'}"><div class="ic">${d.gate.status==='RELEASED'?'✅':'⛔'}</div><div><b>Valuation-readiness gate: ${d.gate.status}.</b> ${d.gate.critical_total-d.gate.critical_failed}/${d.gate.critical_total} critical controls pass. ${d.gate.note}</div></div>
+      <div class="card"><h4>Data-quality controls</h4><div class="desc">The gate releases calculation only when every critical control passes.</div>
+        <table><thead><tr><th>Check</th><th>Source</th><th>Description</th><th>Severity</th><th>Status</th></tr></thead><tbody>
+          ${d.dq_checks.map(c=>`<tr><td class="mono">${c.check_id}</td><td>${c.source}</td><td>${c.description}</td><td>${c.severity}</td><td><span class="tag ${c.status==='PASS'?'pass':'drop'}">${c.status}</span></td></tr>`).join("")}
+        </tbody></table></div>
       ${DISCLAIMER}`;
   },
 
@@ -279,7 +284,7 @@ const RENDER={
   },
 
   async impact(c){
-    const d=await api("/api/change-impact");
+    const [d,dn]=await Promise.all([api("/api/change-impact"),api("/api/downstream")]);
     const cmp=d.comparison.map(r=>`<tr><td>${r.item}</td><td class="num">${m(r.initial)}</td><td class="num">${m(r.corrected)}</td><td class="num ${r.change>0?'up':'flat'}">${signed(r.change)}</td></tr>`).join("");
     const mr=d.method_response;
     const methRows=[["Incurred chain-ladder",mr.incurred_chain_ladder],["Incurred Bornhuetter-Ferguson",mr.incurred_bornhuetter_ferguson],["Paid chain-ladder",mr.paid_chain_ladder]]
@@ -306,6 +311,11 @@ const RENDER={
           <div class="fc"><div class="n">+€${fn.net_1_76.toFixed(2)}m</div><div class="l">Net undiscounted indemnity movement</div></div>
           <div class="fc"><div class="n">+€${fn.residual_journal_0_2.toFixed(1)}m</div><div class="l">Residual finance journal only</div></div>
         </div></div>
+      <div class="card"><h4>Downstream hand-off — capital & IFRS 17</h4><div class="desc">${dn.note}</div>
+        <table><thead><tr><th>Domain</th><th>Target</th><th>Affected input</th><th class="num">Movement</th><th>Status</th></tr></thead><tbody>
+          ${dn.handoffs.map(h=>`<tr><td>${h.domain}</td><td>${h.target}</td><td>${h.affected_input}</td><td class="num">${signed(h.input_movement_m)}</td><td><span class="pill ${h.status==='REQUIRES_RECALCULATION'?'warn':'muted'}">${h.status.replace(/_/g,' ')}</span></td></tr>`).join("")}
+        </tbody></table>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--muted)">Honest by design: the affected inputs are passed with versions and source decision IDs; no statutory capital or IFRS 17 number is invented.</div></div>
       ${DISCLAIMER}`;
   },
 
@@ -338,7 +348,7 @@ const RENDER={
   },
 
   async evidence(c){
-    const d=await api("/api/evidence");
+    const [d,ln,cr]=await Promise.all([api("/api/evidence"),api("/api/lineage"),api("/api/committee-report")]);
     const audit=d.audit.map(a=>`<tr><td class="mono">${a.event_id}</td><td>${a.event_type}</td><td>${a.entity_id}</td><td>${a.detail}</td><td class="mono">${a.actor}</td></tr>`).join("");
     const mans=d.manifests.map(mn=>{const r=mn.manifest.results_eur_millions||{};return `<div class="card"><h4>${mn.label} run — ${mn.run_id}</h4><div class="desc">Information cutoff ${mn.cutoff}. Retained inputs + results + assumptions.</div>
       <div class="kv"><span>Selected ultimate</span><b>${r.selected_ultimate!=null?m(r.selected_ultimate):'—'}</b></div>
@@ -351,6 +361,14 @@ const RENDER={
       <div class="grid2">${mans}</div>
       <div class="card"><h4>Reproduce this calculation</h4><div class="desc">Re-run the engine deterministically from the retained inputs and compare to the stored completed run.</div>
         <button class="btn" id="repro">▶ Reproduce both runs</button><div id="reproout" style="margin-top:12px"></div></div>
+      <div class="card"><h4>Lineage — from the executive amount to the source</h4><div class="desc">${ln.note}</div>
+        <table><thead><tr><th>Level</th><th>Reference</th><th>Value</th><th>Detail</th></tr></thead><tbody>
+          ${ln.chain.map((x,i)=>`<tr><td><b>${x.level}</b></td><td class="mono">${x.ref}</td><td class="num">${x.value}</td><td style="font-size:12.5px;color:var(--muted)">${x.detail}</td></tr>`).join("")}
+        </tbody></table></div>
+      <div class="card"><h4>Committee memo — rendered from the approved run</h4><div class="desc">${cr.note} · ${cr.basis}</div>
+        <div style="font-weight:650;margin-bottom:6px">${cr.title}</div>
+        <ul style="margin:0 0 10px;padding-left:18px;font-size:13.5px">${cr.lines.map(l=>`<li style="margin:4px 0">${l}</li>`).join("")}</ul>
+        <div style="font-size:12px;color:var(--muted)">Decision ${cr.decision_id} · reviewer ${cr.reviewer} · hash ${cr.proposal_hash}</div></div>
       <div class="card"><h4>Governance audit log</h4><div class="desc">Append-only record of selections, gates and the quarantined duplicate.</div>
         <table><thead><tr><th>Event</th><th>Type</th><th>Entity</th><th>Detail</th><th>Actor</th></tr></thead><tbody>${audit}</tbody></table></div>
       ${DISCLAIMER}`;

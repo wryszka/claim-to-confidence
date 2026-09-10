@@ -62,6 +62,21 @@ def api_evidence():
     return _safe(journey.evidence)
 
 
+@app.get("/api/downstream")
+def api_downstream():
+    return _safe(journey.downstream)
+
+
+@app.get("/api/lineage")
+def api_lineage():
+    return _safe(journey.lineage)
+
+
+@app.get("/api/committee-report")
+def api_committee_report():
+    return _safe(journey.committee_report)
+
+
 @app.get("/api/reproduce")
 def api_reproduce():
     return _safe(journey.reproduce)

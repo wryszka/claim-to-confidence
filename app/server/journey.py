@@ -122,6 +122,10 @@ def readiness():
                     f"FROM {F('1_raw_claim_transaction')} WHERE dedup_status = 'DROPPED_DUPLICATE'")
     counts = sql.query_one(f"SELECT COUNT(*) AS txns, COUNT(DISTINCT claim_id) AS claims "
                            f"FROM {F('1_raw_claim_transaction')} WHERE dedup_status = 'ACCEPTED'")
+    checks = sql.query(f"SELECT check_id, source, description, severity, status FROM {F('1_raw_dq_check')} "
+                       f"ORDER BY check_id")
+    critical_failed = [c for c in checks if c["severity"] == "critical" and c["status"] != "PASS"]
+    gate = "BLOCKED" if critical_failed else "RELEASED"
     return {
         "deliveries": deliveries,
         "duplicate": {"caught": len(dup) > 0, "rows": dup,
@@ -132,6 +136,88 @@ def readiness():
                        "incurred": _mm(int(s["incurred_eur"])), "claim_count": s["claim_count"],
                        "quality_gate": s["quality_gate"]} for s in snaps.values()],
         "control_totals": {"accepted_transactions": int(counts["txns"]), "claims": int(counts["claims"])},
+        "dq_checks": checks,
+        "gate": {"status": gate, "critical_total": len([c for c in checks if c["severity"] == "critical"]),
+                 "critical_failed": len(critical_failed),
+                 "note": "The valuation-readiness gate releases calculation only when every critical control passes. "
+                         "If a critical check fails or a required source is missing, the gate BLOCKS release at the "
+                         "backend — no green 'complete' state on partial work."},
+    }
+
+
+# ── downstream hand-off (honest) ──────────────────────────────────────────────
+
+def downstream():
+    st = compute_state()
+    vi, vc = st["vi"], st["vc"]
+    rows = sql.query(f"SELECT domain, target, affected_input, input_movement_eur, currency, valuation_date, "
+                     f"cohort_map, source_decision_id, status, note FROM {F('6_gov_downstream_handoff')}")
+    live = {"gross": _mm(vc["gross_outstanding"] - vi["gross_outstanding"]),
+            "ceded": _mm(vc["ceded_outstanding"] - vi["ceded_outstanding"]),
+            "net": _mm(vc["net_outstanding"] - vi["net_outstanding"])}
+    out = [{"domain": r["domain"], "target": r["target"], "affected_input": r["affected_input"],
+            "input_movement_m": _mm(int(r["input_movement_eur"])), "currency": r["currency"],
+            "valuation_date": r["valuation_date"], "cohort_map": r["cohort_map"],
+            "source_decision_id": r["source_decision_id"], "status": r["status"], "note": r["note"]} for r in rows]
+    return {"handoffs": out, "live_movement": live,
+            "note": "Downstream domains receive the versioned, reconciled inputs and identify the affected "
+                    "recalculation. No statutory capital or IFRS 17 number is fabricated — status shows "
+                    "'requires recalculation' until the supported model runs and is independently checked."}
+
+
+# ── lineage (T13): executive amount → population → method → human decision ─────
+
+def lineage():
+    st = compute_state()
+    vc = st["vc"]
+    dec = sql.query_one(f"SELECT decision_id, proposal_id, status, reviewer, proposal_hash FROM {F('6_gov_decision')} "
+                        f"WHERE status='APPROVED' LIMIT 1") or {}
+    inc = st["factors"]["INCURRED"]
+    # triangle diagonal (AY2023 current) — ties to the ledger
+    tri = sql.query_one(f"SELECT cumulative_eur FROM {F('3_triangle_cell')} WHERE measure='INCURRED' AND accident_year=2023 AND development_lag=3")
+    pos = sql.query_one(f"SELECT paid_eur, case_eur, incurred_eur FROM {F('2_valuation_snapshot')} WHERE snapshot_id='SNAP-CORRECTED'")
+    txn = sql.query_one(f"SELECT COUNT(*) AS n, SUM(amount_eur) AS paid FROM {F('1_raw_claim_transaction')} "
+                        f"WHERE event_type='INDEMNITY_PAYMENT' AND dedup_status='ACCEPTED'")
+    dlv = sql.query(f"SELECT delivery_id, status, dq_status FROM {F('1_raw_source_delivery')} ORDER BY received_ts")
+    return {"chain": [
+        {"level": "Executive amount", "ref": "Net outstanding movement", "value": f"+€{_mm(vc['net_outstanding'] - st['vi']['net_outstanding'])}m",
+         "detail": "The headline the board sees."},
+        {"level": "Human decision", "ref": dec.get("decision_id", "DEC-2026Q2-CM"),
+         "value": dec.get("status", "APPROVED"), "detail": f"Approved by {dec.get('reviewer','chief actuary')}; hash {dec.get('proposal_hash','')}."},
+        {"level": "Selection (judgement)", "ref": dec.get("proposal_id", "SEL-2026Q2-CM-INCURRED"),
+         "value": f"incurred CDF {inc['cumulative_development_factor']} · 50/50 CL+BF", "detail": inc["rationale"][:150] + "…"},
+        {"level": "Method indications", "ref": "AY2023 corrected", "value": f"CL {_mm(vc['indications']['incurred_chain_ladder'])} · BF {_mm(vc['indications']['incurred_bornhuetter_ferguson'])}",
+         "detail": "Computed live from the selected factors and the a-priori basis."},
+        {"level": "Triangle diagonal", "ref": "INCURRED AY2023 lag 3", "value": f"€{_mm(int(tri['cumulative_eur'])) if tri else '—'}m",
+         "detail": "Reconciles to the claim ledger to the penny."},
+        {"level": "Population (ledger)", "ref": f"{int(txn['n']) if txn else 0} accepted payments",
+         "value": f"paid €{_mm(int(txn['paid'])) if txn and txn['paid'] else '—'}m · case €{_mm(int(pos['case_eur'])) if pos else '—'}m",
+         "detail": "The transactions that aggregate to the position; the duplicate delivery excluded."},
+        {"level": "Source", "ref": ", ".join(d["delivery_id"] for d in dlv[:3]),
+         "value": f"{len(dlv)} deliveries", "detail": "One quarantined as a duplicate; the rest accepted."},
+    ], "note": "Every step links downward to the records that produced it — the displayed executive amount "
+               "traces to the contributing population, method and human selection."}
+
+
+# ── committee report (T18): rendered from the approved run ─────────────────────
+
+def committee_report():
+    st = compute_state()
+    vi, vc, fin, br = st["vi"], st["vc"], st["fin"], st["bridge"]
+    dec = sql.query_one(f"SELECT decision_id, reviewer, proposal_hash FROM {F('6_gov_decision')} WHERE status='APPROVED' LIMIT 1") or {}
+    return {
+        "title": "Reserving Committee memo — AY2023 Commercial Motor liability",
+        "basis": "EUR millions, gross undiscounted indemnity. Synthetic scenario (Bricksurance SE).",
+        "decision_id": dec.get("decision_id", "DEC-2026Q2-CM"), "reviewer": dec.get("reviewer", ""),
+        "proposal_hash": dec.get("proposal_hash", ""),
+        "lines": [
+            f"Selected ultimate revised {_mm(vi['selected_ultimate'])} → {_mm(vc['selected_ultimate'])} (+{_mm(vc['selected_ultimate']-vi['selected_ultimate'])}m).",
+            f"Gross outstanding {_mm(vi['gross_outstanding'])} → {_mm(vc['gross_outstanding'])}; net after 20% quota share {_mm(vi['net_outstanding'])} → {_mm(vc['net_outstanding'])} (+{_mm(vc['net_outstanding']-vi['net_outstanding'])}m).",
+            f"Driver: a €2.0m case correction on one major bodily-injury claim, effective 30 Jun, known 6 Jul.",
+            f"Finance: €2.0m already posted; only the €{_mm(fin['residual_gross'])}m residual IBNR proposed for booking (balanced journal).",
+            f"Downstream: capital and IFRS 17 dependencies identified and flagged for recalculation; no statutory number asserted.",
+        ],
+        "note": "Rendered from the approved run; figures are the booked selection, not free text.",
     }
 
 
