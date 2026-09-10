@@ -72,6 +72,33 @@ against the deployed tables. 6 partial, 9 deferred.
   value in `app.yaml` to avoid a resource-binding failure mode.
 - Warehouse was STOPPED at deploy time; it wakes on first query (cold-start ~1 min).
 
+## 2026-09-10 — Group Control Tower integration
+
+Wired `claim-to-confidence` into the estate's Group Control Tower (in the `actuarial-workbench`
+repo) as a **live node**, per the tower's manifest-driven contract:
+- Added an `/api/mcp` JSON-RPC endpoint (`app/server/mcp.py`) with `read_estimates` (headline
+  KPIs) and `read_flagged_items` (attention queue). Verified live: `tools/list` + `tools/call`
+  return the correct figures (gross 41.3 / net 33.04 / +2.2 / +1.76 / residual 0.2; 4 attention items).
+- Published two views the tower reads directly: `vw_group_headline` (journey KPIs) and
+  `vw_group_health` (control status) — folded into `deploy_databricks.py` for reproducibility.
+- Added the node + adapter + two planned spine edges (claims→c2c→reinsurance) to
+  `actuarial-workbench/ESTATE_MANIFEST.yaml`; the tower is 100% manifest-driven, no code edits.
+- Granted the **hub's** app service principal (`7d88f801-…`) USE CATALOG + USE/SELECT on the
+  `claim_to_confidence` schema, and CAN_USE on the c2c app (for the MCP calls + audit union).
+- Deployed the hub. **Verified:** the served `/api/group/manifest` now lists 9 nodes incl.
+  `claim-to-confidence`.
+
+**Gotcha:** `make deploy-dev` runs `cp ESTATE_MANIFEST.yaml src/app/` in `build`, but the first
+`databricks bundle deploy` did **not** sync the updated manifest into the deployed bundle path.
+Fix: `databricks workspace import` the manifest straight to the app's `source_code_path` and
+`databricks apps deploy` from there. (Re-check this on the next hub deploy.)
+
+**Caveat:** the tower's `/api/group/warmup` (which reads every node's views + calls each MCP)
+**504s** when many nodes are cold — an estate-wide cold-warm characteristic, not a c2c defect.
+The board caches the last successful warm (`gct_cache_snapshot`); c2c's headline appears once a
+warm completes. `/api/group/state` and `/api/group/board` are SPA routes, not JSON APIs — the
+board data is the warmed snapshot.
+
 ## Watch-outs for the next session
 
 - The app SP's warehouse ACL is known to get dropped across the estate periodically
