@@ -9,7 +9,7 @@ import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 
-from server import journey, agent
+from server import journey, agent, mcp
 
 app = FastAPI(title="Claim to Confidence")
 DIST = os.path.join(os.path.dirname(__file__), "dist")
@@ -90,6 +90,9 @@ def api_agent_attempt(action: str = Query(...)):
 @app.get("/api/agent/trace")
 def api_agent_trace():
     return _safe(agent.ai_trace)
+
+
+app.include_router(mcp.router)
 
 
 @app.get("/healthz")

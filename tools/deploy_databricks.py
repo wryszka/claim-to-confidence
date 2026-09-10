@@ -243,6 +243,23 @@ def run(profile, warehouse_id):
         stmts.append(f"INSERT INTO {fq}.`7_gov_run_manifest` VALUES ('{run_id}','{label}','{cutoff}','{now}',"
                      f"'{esc(json.dumps(manifest, default=str))}')")
 
+    # ── published views for the Group Control Tower (aggregate/route, never recompute) ──
+    stmts.append(f"CREATE OR REPLACE VIEW {fq}.`vw_group_headline` COMMENT '{LABEL} headline KPIs for the estate tower' AS "
+                 f"SELECT 'AY2023 Commercial Motor' AS cohort, '{W.HERO_CLAIM}' AS claim_id, "
+                 f"ROUND(c.gross_outstanding_eur/1e6,2) AS gross_outstanding_m, "
+                 f"ROUND(c.net_outstanding_eur/1e6,2) AS net_outstanding_m, "
+                 f"ROUND((c.gross_outstanding_eur - i.gross_outstanding_eur)/1e6,2) AS gross_movement_m, "
+                 f"ROUND((c.net_outstanding_eur - i.net_outstanding_eur)/1e6,2) AS net_movement_m, "
+                 f"ROUND((c.gross_outstanding_eur - f.ledger_gross_outstanding_eur)/1e6,2) AS residual_to_book_m, "
+                 f"current_timestamp() AS _loaded_at "
+                 f"FROM (SELECT * FROM {fq}.`4_reserve_estimate` WHERE snapshot_id='SNAP-CORRECTED') c "
+                 f"CROSS JOIN (SELECT gross_outstanding_eur, net_outstanding_eur FROM {fq}.`4_reserve_estimate` WHERE snapshot_id='SNAP-INITIAL') i "
+                 f"CROSS JOIN (SELECT ledger_gross_outstanding_eur FROM {fq}.`6_finance_ledger_position`) f")
+    stmts.append(f"CREATE OR REPLACE VIEW {fq}.`vw_group_health` COMMENT '{LABEL} control/quality status' AS "
+                 f"SELECT label AS snapshot, information_cutoff, quality_gate AS control_status, "
+                 f"CASE WHEN quality_gate='PASS' THEN 1 ELSE 0 END AS ok, current_timestamp() AS _loaded_at "
+                 f"FROM {fq}.`2_valuation_snapshot`")
+
     # ── execute ──────────────────────────────────────────────────────────────
     print(f"[deploy] {len(stmts)} statements → {fq} (profile={profile})")
     for n, st in enumerate(stmts, 1):
