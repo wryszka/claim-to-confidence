@@ -9,7 +9,7 @@ import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 
-from server import journey
+from server import journey, agent
 
 app = FastAPI(title="Claim to Confidence")
 DIST = os.path.join(os.path.dirname(__file__), "dist")
@@ -70,6 +70,26 @@ def api_reproduce():
 @app.get("/api/selection/recompute")
 def api_recompute(cl_weight: float = Query(..., ge=0.0, le=1.0)):
     return _safe(journey.recompute, cl_weight)
+
+
+@app.get("/api/agent/suggested")
+def api_agent_suggested():
+    return JSONResponse({"suggested": agent.SUGGESTED})
+
+
+@app.get("/api/agent/ask")
+def api_agent_ask(q: str = Query(...), notes: bool = Query(False)):
+    return _safe(agent.ask, q, notes)
+
+
+@app.get("/api/agent/attempt")
+def api_agent_attempt(action: str = Query(...)):
+    return _safe(agent.attempt_privileged_action, action)
+
+
+@app.get("/api/agent/trace")
+def api_agent_trace():
+    return _safe(agent.ai_trace)
 
 
 @app.get("/healthz")
