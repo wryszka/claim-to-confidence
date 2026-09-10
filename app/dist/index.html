@@ -401,8 +401,9 @@ const RENDER={
       loadTrace();};
     c.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{const o=$("#actout");o.innerHTML=`<span class="flat">Checking policy…</span>`;
       const r=await api(`/api/agent/attempt?action=${b.dataset.act}`);
-      const tone=r.result==="DENIED"?"danger":(r.result==="PERMITTED"?"good":"muted");
-      o.innerHTML=`<div class="callout ${r.result==='DENIED'?'amber':'good'}"><div class="ic">${r.result==='DENIED'?'🚫':'✓'}</div><div><b>${r.action} → ${r.result}.</b> ${r.policy||''} ${r.authorised_actor?('<br/><span class="flat" style="font-size:12px">Authorised: '+r.authorised_actor+'</span>'):''}</div></div>`;
+      const enf=r.enforced_by?` <span class="pill ${r.enforced_by==='unity_catalog'?'danger':'muted'}">enforced by ${r.enforced_by}</span>`:'';
+      const uc=r.uc_error?`<br/><span class="flat" style="font-size:11.5px">Unity Catalog: ${(r.uc_error||'').replace(/</g,'&lt;').slice(0,140)}</span>`:'';
+      o.innerHTML=`<div class="callout ${r.result==='DENIED'?'amber':'good'}"><div class="ic">${r.result==='DENIED'?'🚫':'✓'}</div><div><b>${r.action} → ${r.result}.</b>${enf} ${r.policy||''}${uc} ${r.authorised_actor?('<br/><span class="flat" style="font-size:12px">Authorised: '+r.authorised_actor+'</span>'):''}</div></div>`;
       loadTrace();});
     async function loadTrace(){try{const t=await api("/api/agent/trace");
       $("#trace").innerHTML=`<table><thead><tr><th>Trace</th><th>Surface</th><th>Question / action</th><th>Served by</th></tr></thead><tbody>`+

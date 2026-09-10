@@ -271,12 +271,18 @@ def review():
     st = compute_state()
     vc = st["vc"]
     fac = st["factors"]
+    dec = sql.query_one(f"SELECT decision_id, proposal_id, cohort, selected_ultimate_eur, gross_outstanding_eur, "
+                        f"net_outstanding_eur, status, preparer, reviewer, proposal_hash FROM {F('6_gov_decision')} "
+                        f"WHERE status = 'APPROVED' LIMIT 1") or {}
     return {
-        "proposal": {"selection_id": "SEL-2026Q2-CM-INCURRED", "cohort": "AY2023 Commercial Motor",
-                     "selected_ultimate": _mm(vc["selected_ultimate"]),
-                     "gross_outstanding": _mm(vc["gross_outstanding"]), "net_outstanding": _mm(vc["net_outstanding"]),
-                     "status": "APPROVED", "preparer": fac["INCURRED"]["selected_by"],
-                     "reviewer": fac["INCURRED"]["approved_by"]},
+        "proposal": {"selection_id": dec.get("proposal_id", "SEL-2026Q2-CM-INCURRED"),
+                     "cohort": dec.get("cohort", "AY2023 Commercial Motor"),
+                     "selected_ultimate": _mm(int(dec["selected_ultimate_eur"])) if dec.get("selected_ultimate_eur") else _mm(vc["selected_ultimate"]),
+                     "gross_outstanding": _mm(int(dec["gross_outstanding_eur"])) if dec.get("gross_outstanding_eur") else _mm(vc["gross_outstanding"]),
+                     "net_outstanding": _mm(int(dec["net_outstanding_eur"])) if dec.get("net_outstanding_eur") else _mm(vc["net_outstanding"]),
+                     "status": dec.get("status", "APPROVED"), "preparer": dec.get("preparer", fac["INCURRED"]["selected_by"]),
+                     "reviewer": dec.get("reviewer", fac["INCURRED"]["approved_by"]),
+                     "proposal_hash": dec.get("proposal_hash", "")},
         "authority": [
             {"actor": "Reserving analyst", "may": "Investigate, run approved methods, draft selections",
              "may_not": "Approve their own material proposal"},

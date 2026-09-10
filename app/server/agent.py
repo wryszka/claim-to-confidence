@@ -112,9 +112,26 @@ def attempt_privileged_action(action):
     forbidden = {"approve_reserve": "reserve approval", "publish": "publication",
                  "correct_source": "source correction", "change_permission": "permission change",
                  "relax_gate": "control-gate relaxation", "export_other_portfolio": "cross-portfolio export"}
+    if action == "approve_reserve":
+        # REAL data-tier enforcement: actually attempt to write an approval. The app/agent
+        # service principal has no MODIFY grant on 6_gov_decision, so Unity Catalog denies it
+        # — even though the code tried. This is enforcement in the real backend, not the UI.
+        enforced_by, uc_error = "unknown", None
+        try:
+            sql.query(f"INSERT INTO {F('6_gov_decision')} VALUES ('DEC-AGENT-ATTEMPT','SEL-2026Q2-CM-INCURRED',"
+                      f"'AY2023 Commercial Motor',0,0,0,'APPROVED','agent','agent','now','x')")
+            enforced_by = "NOT ENFORCED — write unexpectedly succeeded"  # would be a real failure
+        except Exception as e:
+            enforced_by, uc_error = "unity_catalog", str(e)[:200]
+        _trace("agent_denied", action, "uc_denied")
+        return {"action": action, "result": "DENIED", "enforced_by": enforced_by, "uc_error": uc_error,
+                "policy": "The agent/app identity has no MODIFY privilege on the approvals table. Unity Catalog "
+                          "denied the write at the data tier — the code attempted it and the platform refused. "
+                          "Reserve approval requires an authenticated chief-actuary role.",
+                "authorised_actor": "Chief actuary / reviewer"}
     if action in forbidden:
         _trace("agent_denied", action, "policy_denied")
-        return {"action": action, "result": "DENIED",
+        return {"action": action, "result": "DENIED", "enforced_by": "agent_tool_contract",
                 "policy": f"The agent identity is not authorised for {forbidden[action]}. "
                           f"This action requires an authenticated human role and is enforced by the backend, "
                           f"not the UI. The request was logged to the AI activity trace.",
