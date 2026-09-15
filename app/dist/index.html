@@ -20,23 +20,21 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;display:flex;min-height:100vh}
   a{color:var(--accent2);text-decoration:none}
-  /* ---- sidebar ---- */
   .sidebar{width:256px;flex:0 0 256px;background:linear-gradient(180deg,var(--nav),var(--nav2));
     color:#e2e8f0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
   .brand{padding:22px 22px 14px}
   .brand .ey{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8b9cc0}
   .brand h1{font-size:19px;margin:6px 0 2px;font-weight:700;letter-spacing:-.01em;color:#fff}
   .brand .sub{font-size:12px;color:#93a3c4}
-  nav{padding:10px}
+  nav{padding:10px;overflow-y:auto}
   nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:0;
-    color:#c6d0e4;padding:11px 13px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:500}
+    color:#c6d0e4;padding:10px 13px;border-radius:10px;font-size:14px;cursor:pointer;font-weight:500}
   nav button .ix{width:22px;height:22px;border-radius:6px;background:#22304d;display:grid;place-items:center;
     font-size:12px;font-weight:700;color:#9fb2d6}
   nav button:hover{background:#1b2740;color:#fff}
   nav button.active{background:linear-gradient(90deg,var(--accent),#6366f1);color:#fff;box-shadow:var(--shadow)}
   nav button.active .ix{background:rgba(255,255,255,.22);color:#fff}
   .side-foot{margin-top:auto;padding:16px 20px;font-size:11px;color:#7f8fb3;border-top:1px solid #1c2740}
-  /* ---- main ---- */
   .main{flex:1;min-width:0;display:flex;flex-direction:column}
   .ctxbar{background:#fff;border-bottom:1px solid var(--border);padding:10px 26px;display:flex;
     align-items:center;gap:18px;flex-wrap:wrap;position:sticky;top:0;z-index:5}
@@ -47,7 +45,6 @@
   .content{padding:26px;max-width:1180px;width:100%}
   h2.screen{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
   .screen-sub{color:var(--muted);margin:0 0 20px;font-size:14px}
-  /* ---- hero ---- */
   .hero{background:radial-gradient(1200px 400px at 15% -20%,#26346b 0%,#0b1220 60%);
     border-radius:20px;padding:34px 36px;color:#fff;box-shadow:var(--shadow);margin-bottom:22px}
   .hero .ey{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:#93a3c4}
@@ -59,7 +56,6 @@
   .hn .big{font-size:38px;font-weight:760;letter-spacing:-.03em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
   .hn .fine{font-size:12.5px;color:#a9b4d2}
   .hn.info .big{color:#7dd3fc}.hn.warn .big{color:#fcd34d}.hn.good .big{color:#86efac}
-  /* ---- ripple ---- */
   .ripple{display:flex;align-items:stretch;gap:0;margin:22px 0 8px;overflow-x:auto;padding-bottom:6px}
   .rnode{flex:1;min-width:158px;background:var(--card);border:1px solid var(--border);border-radius:14px;
     padding:15px 16px;position:relative;cursor:pointer;transition:transform .12s,box-shadow .12s}
@@ -75,10 +71,11 @@
   .pill.good{background:var(--good-bg);color:var(--good)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.info{background:var(--info-bg);color:var(--info)}.pill.muted{background:var(--muted-bg);color:var(--muted)}
   .pill.danger{background:var(--danger-bg);color:var(--danger)}
-  /* ---- callout / cards ---- */
   .callout{border-radius:14px;padding:18px 20px;margin:14px 0;display:flex;gap:14px;align-items:flex-start}
   .callout.good{background:var(--good-bg);border:1px solid #bbf7d0}
   .callout.amber{background:var(--warn-bg);border:1px solid #fde68a}
+  .callout.info{background:var(--info-bg);border:1px solid #bae6fd}
+  .callout.danger{background:var(--danger-bg);border:1px solid #fecaca}
   .callout .ic{font-size:22px;line-height:1}
   .callout b{font-weight:700}
   .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 22px;
@@ -86,9 +83,9 @@
   .card h4{margin:0 0 4px;font-size:16px}
   .card .desc{color:var(--muted);font-size:13px;margin:0 0 14px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-  /* ---- tables ---- */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
   table{width:100%;border-collapse:collapse;font-size:13.5px}
-  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:top}
   th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
   td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   tr.hi{background:#fffbeb}
@@ -97,13 +94,21 @@
   .tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px}
   .tag.pass{background:var(--good-bg);color:var(--good)}.tag.drop{background:var(--danger-bg);color:var(--danger)}
   .tag.quar{background:var(--warn-bg);color:var(--warn)}
-  /* ---- explainer ---- */
-  .explain{background:linear-gradient(90deg,#eef2ff,#f5f3ff);border:1px solid #e0e7ff;border-radius:12px;
-    padding:0;margin-bottom:18px;overflow:hidden}
+  .explain,.evbox,.presenter{border-radius:12px;margin-bottom:16px;overflow:hidden}
+  .explain{background:linear-gradient(90deg,#eef2ff,#f5f3ff);border:1px solid #e0e7ff}
   .explain summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:13.5px;color:#4338ca;list-style:none}
   .explain summary::-webkit-details-marker{display:none}
   .explain summary::before{content:"❓ ";}
   .explain .body{padding:0 16px 14px;font-size:13.5px;color:#3730a3}
+  .evbox{background:#f8fafc;border:1px solid var(--border)}
+  .evbox summary{cursor:pointer;padding:9px 14px;font-weight:600;font-size:12.5px;color:var(--accent2);list-style:none}
+  .evbox summary::-webkit-details-marker{display:none}
+  .evbox .body{padding:0 14px 12px;font-size:12.5px;color:var(--muted)}
+  .presenter{background:#0b1220;border:1px solid #1c2740;color:#c6d0e4}
+  .presenter summary{cursor:pointer;padding:11px 16px;font-weight:600;font-size:13px;color:#cbd5e1;list-style:none}
+  .presenter summary::-webkit-details-marker{display:none}
+  .presenter .body{padding:6px 16px 16px;font-size:13px}
+  .presenter input[type=password],.presenter input[type=text]{background:#141d31;border:1px solid #2a3550;color:#e2e8f0;border-radius:8px;padding:7px 10px}
   .disclaimer{background:var(--warn-bg);border:1px solid #fde68a;border-radius:12px;padding:11px 16px;
     font-size:12.5px;color:#78350f;margin-bottom:18px}
   .four{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:6px 0}
@@ -115,12 +120,18 @@
   .btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 16px;font-weight:600;
     font-size:13.5px;cursor:pointer}
   .btn.ghost{background:#fff;color:var(--accent);border:1px solid var(--accent)}
-  .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px}
-  .kv b{font-variant-numeric:tabular-nums}
+  .btn.dark{background:#22304d;color:#fff;border:1px solid #2a3550}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px dashed var(--border);font-size:14px}
+  .kv b{font-variant-numeric:tabular-nums;text-align:right}
   .loading{color:var(--muted);padding:40px;text-align:center}
   .why{color:var(--faint);cursor:help;font-size:12px;border-bottom:1px dotted var(--faint)}
-  code.acct{font-size:12px;background:var(--muted-bg);padding:1px 6px;border-radius:5px}
-  @media(max-width:900px){.heronums,.grid2,.four{grid-template-columns:1fr}.sidebar{display:none}}
+  code.acct,code.k{font-size:12px;background:var(--muted-bg);padding:1px 6px;border-radius:5px}
+  .state-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+  .state-card .st{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+  .state-card.prev{border-top:3px solid var(--muted)}
+  .state-card.appr{border-top:3px solid var(--good)}
+  .state-card.out{border-top:3px solid var(--warn)}
+  @media(max-width:900px){.heronums,.grid2,.grid3,.four{grid-template-columns:1fr}.sidebar{display:none}}
 </style>
 </head>
 <body>
@@ -140,20 +151,24 @@
 
 <script>
 const SCREENS=[
-  {id:"decision",ix:"A",label:"The decision"},
-  {id:"readiness",ix:"B",label:"Data readiness"},
-  {id:"practitioner",ix:"C",label:"Practitioner"},
-  {id:"impact",ix:"D",label:"Change impact"},
-  {id:"review",ix:"E",label:"Review & approval"},
-  {id:"evidence",ix:"F",label:"Decision & evidence"},
-  {id:"agent",ix:"G",label:"Actuary agent"},
+  {id:"discover",ix:"A",label:"Discover (Genie)"},
+  {id:"decision",ix:"B",label:"The decision"},
+  {id:"agent",ix:"C",label:"Investigate (agent)"},
+  {id:"readiness",ix:"D",label:"Data quality"},
+  {id:"practitioner",ix:"E",label:"Judgement"},
+  {id:"review",ix:"F",label:"Approval"},
+  {id:"impact",ix:"G",label:"Downstream"},
+  {id:"evidence",ix:"H",label:"Prove it"},
+  {id:"close",ix:"I",label:"Close"},
 ];
-let META=null, CUR="decision";
+let META=null, CUR="discover", PTOKEN="";
 const $=s=>document.querySelector(s);
 const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
 async function api(p){const r=await fetch(p);const j=await r.json();if(j&&j.error)throw new Error(j.error);return j;}
-const m=v=>`€${Number(v).toFixed(v%1===0?1:2)}m`;
+async function post(p){const sep=p.includes("?")?"&":"?";const r=await fetch(p+sep+"token="+encodeURIComponent(PTOKEN),{method:"POST"});return r.json();}
+const m=v=>v==null?"—":`€${Number(v).toFixed(v%1===0?1:2)}m`;
 const signed=v=>`${v>=0?"+":"−"}€${Math.abs(v).toFixed(Math.abs(v)%1===0?1:2)}m`;
+const esc=s=>(s==null?"":String(s)).replace(/</g,"&lt;");
 
 function renderNav(){
   const n=$("#nav");n.innerHTML="";
@@ -165,23 +180,34 @@ function renderNav(){
 }
 function renderCtx(){
   if(!META)return;
+  const g=META.genie||{};
   $("#ctxbar").innerHTML=
     `<span class="chip"><b>${META.entity}</b></span>`+
     `<span class="chip">Cohort <b>${META.line_of_business} · AY ${META.accident_year}</b></span>`+
     `<span class="chip">Valuation <b>${META.valuation_date}</b></span>`+
     `<span class="chip">Cutoffs <b>${META.cutoff_initial} → ${META.cutoff_corrected}</b></span>`+
-    `<span class="chip">Currency <b>${META.currency}</b></span>`+
+    `<span class="chip">Scenario <b>${META.scenario_id||'SC-BASE'}</b></span>`+
     `<span class="synthetic">● Synthetic insurer data</span>`;
 }
 function explain(title,body){return `<details class="explain"><summary>${title}</summary><div class="body">${body}</div></details>`;}
+function evidence(service,detail){return `<details class="evbox"><summary>⚡ Powered by ${service} · view evidence</summary><div class="body">${detail}</div></details>`;}
+function presenter(inner){return `<details class="presenter"><summary>🎛️ Presenter controls — off the audience path (§6)</summary><div class="body">
+  <div class="slider-row"><label style="font-size:12.5px">Presenter token &nbsp;<input type="password" id="ptok" placeholder="PRESENTER_TOKEN" value="${PTOKEN}"/></label>
+  <span class="flat" style="font-size:12px">POST endpoints, scoped by scenario id; never touch shared data or evidence.</span></div>${inner}
+  <div id="pout" style="margin-top:10px"></div></div></details>`;}
+function bindPtok(){const t=$("#ptok");if(t)t.oninput=()=>{PTOKEN=t.value;};}
+function pmsg(o){const box=$("#pout");if(!box)return;
+  const cls=o.ok?"good":(o.refused==="CONFIRMED_DENIAL"||o.refused==="REQUIRES_REVIEWER_PRINCIPAL"?"good":(o.error&&!o.refused?"danger":"amber"));
+  box.innerHTML=`<div class="callout ${cls}"><div class="ic">${o.ok?'✅':'ℹ️'}</div><div><b>${o.refused||(o.ok?'OK':'result')}</b> — ${esc(o.note||o.error||JSON.stringify(o))}</div></div>`;}
 const DISCLAIMER=`<div class="disclaimer"><b>About this demo.</b> Bricksurance SE is a fictional insurer and all data is synthetic. Figures are computed live on Databricks from a governed data model; they are not a real regulatory result and assert no compliance certification.</div>`;
 
 async function go(id){
   CUR=id;renderNav();
   const c=$("#content");c.innerHTML=`<div class="loading">Loading…</div>`;
-  try{await RENDER[id](c);}catch(e){c.innerHTML=`<div class="card"><h4>Could not load</h4><div class="desc">${e.message}</div></div>`;}
+  try{await RENDER[id](c);bindPtok();}catch(e){c.innerHTML=`<div class="card"><h4>Could not load</h4><div class="desc">${esc(e.message)}</div></div>`;}
   window.scrollTo(0,0);
 }
+window.go=go;
 
 function countUp(node,target,suffix,dp){
   const dur=650,t0=performance.now();
@@ -192,6 +218,33 @@ function countUp(node,target,suffix,dp){
 }
 
 const RENDER={
+  // ── A · Discover with Genie ────────────────────────────────────────────────
+  async discover(c){
+    const g=await api("/api/genie");
+    const cards=g.states.map(s=>{
+      const cls=s.status==='PREVIOUS_APPROVED'?'prev':(s.status==='OUTSTANDING_WORK'?'out':'appr');
+      const nums=(s.gross_m!=null||s.net_m!=null)?`<div class="kv"><span>Gross outstanding</span><b>${m(s.gross_m)}</b></div><div class="kv"><span>Net outstanding</span><b>${m(s.net_m)}</b></div>`:'';
+      const mv=s.net_movement_m!=null?`<div class="kv"><span>Net movement</span><b class="up">${signed(s.net_movement_m)}</b></div>`:'';
+      return `<div class="state-card ${cls}"><div class="st" style="color:var(--${cls==='appr'?'good':cls==='out'?'warn':'muted'})">${s.label}</div>${nums}${mv}<div class="desc" style="margin-top:8px">${esc(s.detail||'')}</div></div>`;
+    }).join("");
+    const entry=g.configured
+      ? `<a class="btn" href="${g.url}" target="_blank" rel="noopener">Open the question in Genie ↗</a>
+         <div class="flat" style="font-size:12px;margin-top:8px">Native Genie space over the governed view <code class="k">${g.reads_view}</code>.</div>`
+      : `<div class="callout amber"><div class="ic">🛈</div><div><b>Genie space not configured.</b> This entry point shows the governed positions below and the documented setup path — it is <b>not</b> a relabelled agent. Create the space with <code class="k">tools/genie_space.py</code> and set <code class="k">GENIE_SPACE_ID</code>. Verified answer shape is shown below so the space can be validated on creation.</div></div>`;
+    c.innerHTML=`
+      <h2 class="screen">Ask the business question</h2>
+      <p class="screen-sub">A useful assistant makes people want to ask. The governed platform makes the answer trustworthy.</p>
+      ${explain("What am I seeing?","The opening business question, answered over a <b>governed Genie view</b> that keeps three states distinct — the previous approved position, the new information (now approved), and the work still outstanding. A proposal or a downstream dependency is never shown as an approved result.")}
+      <div class="card"><h4>“${esc(g.entry_question)}”</h4>
+        <div class="desc">After approval, the follow-up: “${esc(g.followup_question)}”</div>
+        ${entry}</div>
+      <div class="grid3">${cards}</div>
+      <div style="margin-top:14px"><button class="btn ghost" onclick="go('decision')">See the business consequence →</button></div>
+      ${evidence("Genie & Databricks SQL", "Genie answers over <code class=\"k\">"+g.reads_view+"</code>, a Unity Catalog view whose <code class=\"k\">position_status</code> column separates approved / proposed / outstanding. Business result: the board can ask in plain language and never mistake a proposal for an approved figure.")}
+      ${DISCLAIMER}`;
+  },
+
+  // ── B · The decision (business consequence) ────────────────────────────────
   async decision(c){
     const d=await api("/api/decision");const h=d.hero;
     c.innerHTML=`
@@ -207,13 +260,14 @@ const RENDER={
       </div>
       <div class="ripple" id="ripple"></div>
       <div class="callout good"><div class="ic">🛡️</div><div><b>The quiet hero: no double count.</b> The €2.0m case correction is <b>already booked</b> in finance. The platform proposes booking only the <b>€${h.residual_to_book.toFixed(1)}m residual</b> that remains — never the full amount twice. A disconnected spreadsheet cannot know this; the connected platform does.</div></div>
-      ${explain("What am I seeing?",`This is the executive view of the whole decision. Each tile is a real, live figure computed on Databricks from the governed data model. The row below traces the same correction across every domain it touches. Click any step to open the underlying record. Suggested question: <b>“${d.prompt}”</b>`)}
+      ${explain("What am I seeing?",`The executive view of the whole decision — each tile is a real, live figure computed on Databricks. The row below traces the same correction across every domain it touches; click any step to open the underlying record. Suggested question: <b>“${esc(d.prompt)}”</b>`)}
+      ${evidence("Databricks Apps & Unity Catalog","This page is a Databricks App reading governed Unity Catalog tables; every figure is computed live by the shared engine (proven to the cent by 43 oracle checks). Business result: one claim change, shown as a connected decision rather than a single spreadsheet cell.")}
       ${DISCLAIMER}`;
     const rip=$("#ripple");
     d.ripple.forEach(n=>{
       const node=el("div","rnode");
       node.innerHTML=`<div class="rk">${n.key}</div><div class="rl">${n.label}</div><div class="rv">${n.value}</div><div class="rs-sub">${n.sub}</div><span class="pill ${n.tone}">${n.status}</span>`;
-      const map={claim:"readiness",reserve:"practitioner",reinsurance:"impact",finance:"evidence",capital:"impact"};
+      const map={claim:"readiness",reserve:"practitioner",reinsurance:"impact",finance:"review",capital:"impact"};
       node.onclick=()=>go(map[n.key]||"impact");
       rip.appendChild(node);
     });
@@ -222,6 +276,7 @@ const RENDER={
     countUp($("#h2"),h.net_delta,"m",2);
   },
 
+  // ── D · Data quality ────────────────────────────────────────────────────────
   async readiness(c){
     const d=await api("/api/readiness");
     const drows=d.deliveries.map(x=>{
@@ -229,50 +284,61 @@ const RENDER={
       return `<tr class="${x.status==='QUARANTINED'?'hi':''}"><td class="mono">${x.delivery_id}</td><td>${x.source_system}</td><td class="mono">${x.received_ts.replace('T',' ')}</td><td class="mono">${x.information_cutoff}</td><td>${x.status}</td><td>${tag}</td></tr>`;
     }).join("");
     const snaps=d.snapshots.map(s=>`<tr><td><b>${s.label}</b><br/><span class="flat mono">cutoff ${s.cutoff}</span></td><td class="num">${m(s.paid)}</td><td class="num">${m(s.case)}</td><td class="num">${m(s.incurred)}</td><td class="num">${s.claim_count}</td><td><span class="tag pass">${s.quality_gate}</span></td></tr>`).join("");
+    const g=d.gate;
     c.innerHTML=`
-      <h2 class="screen">Data readiness</h2>
-      <p class="screen-sub">Source feeds, control totals, and quality gates — before any reserve is calculated.</p>
-      ${explain("What am I seeing?","The source deliveries that feed this valuation, and the population and financial control totals derived from the claim ledger. The corrected valuation only releases for calculation once every required control passes. The triangle is derived from these transactions — it is never a separately-keyed dataset that can drift.")}
+      <h2 class="screen">Data quality &amp; the readiness gate</h2>
+      <p class="screen-sub">Source feeds, control totals, and a gate tied to the candidate input version — before any reserve is calculated.</p>
+      ${explain("What am I seeing?","The source deliveries and the control totals derived from the claim ledger. The gate releases calculation for a <b>candidate input version</b> only when every critical control passes for that version — a PASS on an older version does not carry to a newer one. The triangle is derived from these transactions, so it cannot silently drift.")}
       <div class="callout amber"><div class="ic">⚠️</div><div><b>Duplicate delivery caught.</b> ${d.duplicate.note} Quarantined rows: <b>${d.duplicate.rows.length}</b>.</div></div>
+      <div class="callout ${g.status==='RELEASED'?'good':'danger'}"><div class="ic">${g.status==='RELEASED'?'✅':'⛔'}</div><div><b>Valuation-readiness gate: ${g.status}.</b> Candidate input version <code class="k">${g.input_version}</code> (approved: <code class="k">${g.approved_input_version}</code>). ${g.critical_total-g.critical_failed}/${g.critical_total} critical controls pass. ${g.note}</div></div>
       <div class="card"><h4>Source deliveries</h4><div class="desc">The quarterly Commercial Motor extract plus the late correction and its duplicate re-delivery.</div>
         <table><thead><tr><th>Delivery</th><th>Source</th><th>Received</th><th>Cutoff</th><th>Status</th><th>Data quality</th></tr></thead><tbody>${drows}</tbody></table></div>
       <div class="card"><h4>Control totals — same valuation, two information cutoffs</h4><div class="desc">Derived from the claim ledger. The €2m correction is known only from the 6 July cutoff.</div>
         <table><thead><tr><th>Snapshot</th><th class="num">Paid</th><th class="num">Case</th><th class="num">Incurred</th><th class="num">Claims</th><th>Gate</th></tr></thead><tbody>${snaps}</tbody></table>
         <div style="margin-top:10px;font-size:13px;color:var(--muted)">Accepted transactions: <b>${d.control_totals.accepted_transactions}</b> across <b>${d.control_totals.claims}</b> claims (duplicate excluded).</div></div>
-      <div class="callout ${d.gate.status==='RELEASED'?'good':'amber'}"><div class="ic">${d.gate.status==='RELEASED'?'✅':'⛔'}</div><div><b>Valuation-readiness gate: ${d.gate.status}.</b> ${d.gate.critical_total-d.gate.critical_failed}/${d.gate.critical_total} critical controls pass. ${d.gate.note}</div></div>
-      <div class="card"><h4>Data-quality controls</h4><div class="desc">The gate releases calculation only when every critical control passes.</div>
+      <div class="card"><h4>Data-quality controls</h4><div class="desc">The gate BLOCKS create / release / approve if any critical control fails. An empty check set never means success.</div>
         <table><thead><tr><th>Check</th><th>Source</th><th>Description</th><th>Severity</th><th>Status</th></tr></thead><tbody>
-          ${d.dq_checks.map(c=>`<tr><td class="mono">${c.check_id}</td><td>${c.source}</td><td>${c.description}</td><td>${c.severity}</td><td><span class="tag ${c.status==='PASS'?'pass':'drop'}">${c.status}</span></td></tr>`).join("")}
+          ${d.dq_checks.map(x=>`<tr><td class="mono">${x.check_id}</td><td>${x.source}</td><td>${esc(x.description)}</td><td>${x.severity}</td><td><span class="tag ${x.status==='PASS'?'pass':'drop'}">${x.status}</span></td></tr>`).join("")}
         </tbody></table></div>
+      ${presenter(`<div class="desc" style="color:#9fb2d6">Demonstrate the real data-quality block (§3D): introduce a source defect → the gate BLOCKS a new run → correct it → the gate RELEASES a new candidate version.</div>
+        <button class="btn dark" id="pIntro" style="margin:3px">1 · Introduce source defect</button>
+        <button class="btn dark" id="pCorrect" style="margin:3px">2 · Correct &amp; revalidate</button>`)}
+      ${evidence("Unity Catalog & Delta","The gate is computed in the backend from <code class=\"k\">1_raw_dq_check</code> and the mutable <code class=\"k\">0_cfg_scenario_state</code> (candidate input version + defect flag). Business result: a partial or broken feed cannot produce a green 'complete' number.")}
       ${DISCLAIMER}`;
+    const bi=$("#pIntro"),bc=$("#pCorrect");
+    if(bi)bi.onclick=async()=>{pmsg(await post("/api/presenter/introduce-defect"));setTimeout(()=>go("readiness"),1200);};
+    if(bc)bc.onclick=async()=>{pmsg(await post("/api/presenter/correct-defect"));setTimeout(()=>go("readiness"),1200);};
   },
 
+  // ── E · Judgement (practitioner + create proposal) ──────────────────────────
   async practitioner(c){
     const d=await api("/api/practitioner");
     const dg=d.diagnostics, sel=d.selection, cc=d.cutoffs.corrected;
     function diagRow(meas){const g=dg[meas];return `<tr><td>${meas==='INCURRED'?'Incurred':'Paid'} cumulative development factor</td><td class="num">${g.empirical_cdf.toFixed(3)}</td><td class="num"><b>${g.selected_cdf.toFixed(2)}</b></td><td class="num ${Math.abs(g.gap_pct)<2?'flat':'up'}">${g.gap_pct>=0?'+':''}${g.gap_pct}%</td></tr>`;}
-    // incurred triangle
     const tri=dg.INCURRED.triangle;const ays=Object.keys(tri).sort();
     const lags=[...new Set(ays.flatMap(a=>Object.keys(tri[a])))].map(Number).sort((a,b)=>a-b);
     const thead=`<tr><th>AY</th>${lags.map(l=>`<th class="num">${l}</th>`).join("")}</tr>`;
-    const tbody=ays.map(a=>`<tr><td><b>${a}</b></td>${lags.map(l=>`<td class="num ${a==='2023'&&l==3?'':''}">${tri[a][l]!=null?tri[a][l].toFixed(1):''}</td>`).join("")}</tr>`).join("");
+    const tbody=ays.map(a=>`<tr><td><b>${a}</b></td>${lags.map(l=>`<td class="num">${tri[a][l]!=null?tri[a][l].toFixed(1):''}</td>`).join("")}</tr>`).join("");
     const meth=[["Reported incurred (paid + case)",cc.reported_incurred],["Incurred chain-ladder",cc.incurred_chain_ladder],["Paid chain-ladder",cc.paid_chain_ladder],["Expected ultimate (premium × loss ratio)",cc.expected_ultimate],["Incurred Bornhuetter-Ferguson",cc.incurred_bornhuetter_ferguson]]
       .map(r=>`<tr><td>${r[0]}</td><td class="num">${m(r[1])}</td></tr>`).join("");
     c.innerHTML=`
-      <h2 class="screen">Practitioner workspace</h2>
-      <p class="screen-sub">The triangle, the method indications, and the actuary's selection — with the diagnostics behind it.</p>
-      ${explain("What am I seeing?","The selected development factors are <b>prescribed, governed actuarial selections</b> (1.20 incurred, 1.70 paid), not automatically fitted. The empirical factors from the triangle are shown separately as a diagnostic — they sit close to the selection, which is the point. Every method indication below is computed live from these inputs.")}
+      <h2 class="screen">Practitioner workspace &amp; judgement</h2>
+      <p class="screen-sub">The triangle, the method indications, and the actuary's selection — then the preparer creates a proposal.</p>
+      ${explain("What am I seeing?","The selected development factors are <b>prescribed, governed actuarial selections</b> (1.20 incurred, 1.70 paid), not automatically fitted. Empirical factors are shown separately as a diagnostic — they sit close to the selection, which is the point. Move the slider to see the engine respond; the hero numbers are never retained after a change.")}
       <div class="card"><h4>Selection policy</h4><div class="desc">${sel.policy}</div>
         <table><thead><tr><th>Diagnostic</th><th class="num">Empirical</th><th class="num">Selected</th><th class="num">Gap</th></tr></thead><tbody>${diagRow('INCURRED')}${diagRow('PAID')}</tbody></table>
         <div style="margin-top:12px;font-size:13px;color:var(--muted)"><span class="why" title="${sel.incurred_rationale.replace(/"/g,'&quot;')}">Why 1.20 incurred? (hover)</span> &nbsp;·&nbsp; <span class="why" title="${sel.paid_rationale.replace(/"/g,'&quot;')}">Why 1.70 paid? (hover)</span></div></div>
       <div class="grid2">
         <div class="card"><h4>Method indications — corrected cutoff</h4><div class="desc">AY2023, gross undiscounted, EUR millions.</div><table><tbody>${meth}<tr><td><b>Selected ultimate</b></td><td class="num"><b>${m(cc.selected_ultimate)}</b></td></tr></tbody></table></div>
-        <div class="card"><h4>What-if — move the selection weight</h4><div class="desc">Blend of incurred chain-ladder and Bornhuetter-Ferguson. Proves the engine is genuinely sensitive; the hero numbers are never retained after a change.</div>
+        <div class="card"><h4>What-if — move the selection weight</h4><div class="desc">Blend of incurred chain-ladder and Bornhuetter-Ferguson. Proves the engine is genuinely sensitive.</div>
           <div class="slider-row"><span>BF</span><input type="range" id="wt" min="0" max="100" value="50"/><span>CL</span></div>
           <div id="wtout"></div></div>
       </div>
       <div class="card"><h4>Incurred development triangle</h4><div class="desc">Cumulative incurred by accident year × development lag (EUR millions), observed at 30 June 2026. AY2023's current diagonal reconciles to the claim ledger.</div>
         <div style="overflow-x:auto"><table><thead>${thead}</thead><tbody>${tbody}</tbody></table></div></div>
+      ${presenter(`<div class="desc" style="color:#9fb2d6">Preparer path (§3E): create a proposal bound to the current candidate version + assumption fingerprint + calc version. It can only be approved by a different reviewer, and only while current.</div>
+        <button class="btn dark" id="pProp">Create proposal (preparer)</button>`)}
+      ${evidence("Delta tables & the shared engine","Triangle, patterns and a-priori live in numbered Delta tables (<code class=\"k\">3_triangle_cell</code>, <code class=\"k\">4_selected_development_pattern</code>, <code class=\"k\">4_reserve_apriori</code>); indications are computed by the same engine the tests prove. Business result: judgement is explicit and inspectable, not hidden in a spreadsheet formula.")}
       ${DISCLAIMER}`;
     const wt=$("#wt"),out=$("#wtout");
     async function upd(){const w=(+wt.value)/100;const r=await api("/api/selection/recompute?cl_weight="+w);
@@ -281,8 +347,64 @@ const RENDER={
         <div class="kv"><span>Net outstanding</span><b>${m(r.net_outstanding)}</b></div>
         <div class="kv"><span>Δ vs 50/50 policy</span><b class="${r.delta_vs_policy>=0?'up':'flat'}">${signed(r.delta_vs_policy)}</b></div>`;}
     wt.oninput=upd;upd();
+    const bp=$("#pProp");if(bp)bp.onclick=async()=>{pmsg(await post("/api/presenter/create-proposal"));};
   },
 
+  // ── F · Approval (review + finance journal + negative test) ─────────────────
+  async review(c){
+    const [rv,fin]=await Promise.all([api("/api/review"),api("/api/finance")]);
+    const auth=rv.authority.map(a=>`<tr><td><b>${a.actor}</b></td><td>${a.may}</td><td style="color:var(--danger)">${a.may_not}</td></tr>`).join("");
+    const jrows=fin.journal.map(l=>`<tr><td><code class="acct">${l.account}</code></td><td class="num">${l.dr?m(l.dr):''}</td><td class="num">${l.cr?m(l.cr):''}</td></tr>`).join("");
+    const p=rv.proposal, ap=rv.approval, sod=rv.separation_of_duties;
+    const propCard = p ? `<div class="card"><h4>Proposal under review</h4>
+        <div class="kv"><span>Proposal</span><b class="mono">${p.proposal_id}</b></div>
+        <div class="kv"><span>Cohort</span><b>${p.cohort}</b></div>
+        <div class="kv"><span>Selected ultimate</span><b>${m(p.selected_ultimate)}</b></div>
+        <div class="kv"><span>Gross / net outstanding</span><b>${m(p.gross_outstanding)} / ${m(p.net_outstanding)}</b></div>
+        <div class="kv"><span>Bound to input version</span><b class="mono">${p.input_version}</b></div>
+        <div class="kv"><span>Assumption fingerprint</span><b class="mono">${p.assumption_hash}</b></div>
+        <div class="kv"><span>Calc version</span><b class="mono">${p.calc_version}</b></div>
+        <div class="kv"><span>Freshness</span><span class="pill ${p.stale?'danger':'good'}">${p.stale?'STALE — cannot approve':'current'}</span></div>
+        <div class="desc" style="margin-top:8px">${p.binding_note}</div></div>`
+      : `<div class="card"><h4>Proposal</h4><div class="callout amber"><div class="ic">🛈</div><div>No proposal on file.</div></div></div>`;
+    const apCard = (rv.approval_status==='NOT_APPROVED' || !ap)
+      ? `<div class="card"><h4>Approval</h4><div class="callout amber"><div class="ic">🛈</div><div><b>NOT APPROVED.</b> No approved decision resolves for this scenario / proposal / run. Nothing on any screen or export will show APPROVED — no fabricated fallback.</div></div></div>`
+      : `<div class="card"><h4>Approved decision</h4>
+        <div class="kv"><span>Decision</span><b class="mono">${ap.decision_id}</b></div>
+        <div class="kv"><span>Status</span><span class="pill good">${ap.status}</span></div>
+        <div class="kv"><span>Preparer</span><b>${ap.preparer}</b></div>
+        <div class="kv"><span>Reviewer</span><b>${ap.reviewer}</b></div>
+        <div class="kv"><span>Separation of duties</span><span class="pill ${ap.separation_of_duties?'good':'danger'}">${ap.separation_of_duties?'preparer ≠ reviewer':'VIOLATED'}</span></div>
+        <div class="kv"><span>Input version · calc</span><b class="mono">${ap.input_version} · ${ap.calc_version}</b></div>
+        <div class="kv"><span>Selected ultimate</span><b>${m(ap.selected_ultimate)}</b></div></div>`;
+    c.innerHTML=`
+      <h2 class="screen">Review &amp; approval</h2>
+      <p class="screen-sub">Who may do what — enforced by the backend, not a UI persona switch.</p>
+      ${explain("What am I seeing?","The exact proposal (bound to its input version, assumption fingerprint and calc version), the approved decision if one exists, and the authority the backend enforces. A stale proposal cannot be approved; the preparer cannot approve their own; the app identity cannot approve at all.")}
+      <div class="grid2">${propCard}${apCard}</div>
+      <div class="card"><h4>Proposed residual journal</h4><div class="desc">${fin.note}</div>
+        <table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead><tbody>${jrows}
+          <tr class="hi"><td><b>Total</b></td><td class="num"><b>${m(fin.total_dr)}</b></td><td class="num"><b>${m(fin.total_cr)}</b></td></tr></tbody></table>
+        <div style="margin-top:8px"><span class="pill ${fin.balanced?'good':'danger'}">${fin.balanced?'Balanced (Dr = Cr)':'UNBALANCED'}</span> <span class="pill warn">${(fin.journal_state||'').replace(/_/g,' ')}</span></div></div>
+      <div class="callout info"><div class="ic">🔐</div><div><b>Separation of duties.</b> ${sod.note}</div></div>
+      <div class="card"><h4>Authority matrix</h4>
+        <table><thead><tr><th>Actor</th><th>May</th><th>May not</th></tr></thead><tbody>${auth}</tbody></table></div>
+      <div class="callout amber"><div class="ic">🚫</div><div><b>Negative test — ${rv.negative_test.scenario}.</b> Result: <b>${rv.negative_test.result}</b>. ${rv.negative_test.detail} <span class="flat">(run it live on the Investigate screen.)</span></div></div>
+      ${presenter(`<div class="desc" style="color:#9fb2d6">Approval enforcement (§3E / §4): try to self-approve (refused), approve as a distinct reviewer (passes pre-conditions, then real UC denial), and make a fresh proposal stale.</div>
+        <input type="text" id="pPid" placeholder="proposal_id (e.g. from Judgement)" style="min-width:260px;margin:3px"/>
+        <button class="btn dark" id="pSelf" style="margin:3px">Self-approve (preparer)</button>
+        <button class="btn dark" id="pRev" style="margin:3px">Approve as chief actuary</button>
+        <button class="btn dark" id="pNext" style="margin:3px">Advance version (make stale)</button>`)}
+      ${evidence("Unity Catalog & Delta","The approved decision is selected by explicit ids from <code class=\"k\">6_gov_decision</code>; the proposal binding lives in <code class=\"k\">6_gov_proposal</code>. The app service principal has SELECT but not MODIFY on the approvals table — Unity Catalog denies any approval write. Business result: authority is enforced at the data tier, not suggested in the UI.")}
+      ${DISCLAIMER}`;
+    const pid=()=>($("#pPid")&&$("#pPid").value.trim())||"PROP-2026Q2-CM-001";
+    const bs=$("#pSelf"),br=$("#pRev"),bn=$("#pNext");
+    if(bs)bs.onclick=async()=>pmsg(await post("/api/presenter/approve?proposal_id="+encodeURIComponent(pid())+"&reviewer=s.okonkwo@bricksurance.example"));
+    if(br)br.onclick=async()=>pmsg(await post("/api/presenter/approve?proposal_id="+encodeURIComponent(pid())+"&reviewer=chief.actuary@bricksurance.example"));
+    if(bn)bn.onclick=async()=>pmsg(await post("/api/presenter/next-version"));
+  },
+
+  // ── G · Downstream (change impact + hand-off lifecycle) ─────────────────────
   async impact(c){
     const [d,dn]=await Promise.all([api("/api/change-impact"),api("/api/downstream")]);
     const cmp=d.comparison.map(r=>`<tr><td>${r.item}</td><td class="num">${m(r.initial)}</td><td class="num">${m(r.corrected)}</td><td class="num ${r.change>0?'up':'flat'}">${signed(r.change)}</td></tr>`).join("");
@@ -291,10 +413,10 @@ const RENDER={
       .map(r=>`<tr><td>${r[0]}</td><td class="num">${m(r[1].initial)}</td><td class="num">${m(r[1].corrected)}</td><td class="num ${r[1].change>0?'up':'flat'}">${signed(r[1].change)}</td></tr>`).join("");
     const br=d.bridge, fn=d.four_numbers;
     c.innerHTML=`
-      <h2 class="screen">Change impact</h2>
+      <h2 class="screen">Change impact &amp; downstream consequences</h2>
       <p class="screen-sub">${d.note}</p>
-      ${explain("What am I seeing?","The same cohort valued at two information cutoffs. The left/right columns are both real, independently computed valuations. The bridge separates the €2.0m already posted from the €0.2m still to book — and the four numbers below are deliberately kept distinct because they are easy to confuse.")}
-      <div class="card"><h4>Selection & reinsurance — initial vs corrected</h4>
+      ${explain("What am I seeing?","The same cohort valued at two cutoffs (both real, independently computed), the bridge separating the €2.0m already posted from the €0.2m still to book, and the four numbers kept distinct. Downstream, the inputs are delivered with versioned, idempotent hand-off ids; the result is honestly 'awaiting recalculation' — no statutory number is invented.")}
+      <div class="card"><h4>Selection &amp; reinsurance — initial vs corrected</h4>
         <table><thead><tr><th>Item</th><th class="num">Initial</th><th class="num">Corrected</th><th class="num">Change</th></tr></thead><tbody>${cmp}</tbody></table></div>
       <div class="card"><h4>How each method responds</h4><div class="desc">Different methods react differently to the same €2m case change — which is exactly why the selection is a judgement, not a formula.</div>
         <table><thead><tr><th>Method</th><th class="num">Initial</th><th class="num">Corrected</th><th class="num">Change</th></tr></thead><tbody>${methRows}</tbody></table></div>
@@ -311,80 +433,72 @@ const RENDER={
           <div class="fc"><div class="n">+€${fn.net_1_76.toFixed(2)}m</div><div class="l">Net undiscounted indemnity movement</div></div>
           <div class="fc"><div class="n">+€${fn.residual_journal_0_2.toFixed(1)}m</div><div class="l">Residual finance journal only</div></div>
         </div></div>
-      <div class="card"><h4>Downstream hand-off — capital & IFRS 17</h4><div class="desc">${dn.note}</div>
-        <table><thead><tr><th>Domain</th><th>Target</th><th>Affected input</th><th class="num">Movement</th><th>Status</th></tr></thead><tbody>
-          ${dn.handoffs.map(h=>`<tr><td>${h.domain}</td><td>${h.target}</td><td>${h.affected_input}</td><td class="num">${signed(h.input_movement_m)}</td><td><span class="pill ${h.status==='REQUIRES_RECALCULATION'?'warn':'muted'}">${h.status.replace(/_/g,' ')}</span></td></tr>`).join("")}
+      <div class="card"><h4>Downstream hand-off — capital &amp; IFRS 17</h4><div class="desc">${dn.note}</div>
+        <table><thead><tr><th>Hand-off</th><th>Domain / target</th><th class="num">Movement</th><th>Delivery</th><th>Result</th></tr></thead><tbody>
+          ${dn.handoffs.map(h=>`<tr><td class="mono">${h.handoff_id} v${h.handoff_version}</td><td>${h.target}<br/><span class="flat" style="font-size:11.5px">${h.affected_input}</span></td><td class="num">${signed(h.input_movement_m)}</td><td><span class="pill info">${h.delivery_state}</span></td><td><span class="pill ${h.result_state==='AWAITING_RECALCULATION'?'warn':'muted'}">${h.result_state.replace(/_/g,' ')}</span></td></tr>`).join("")}
         </tbody></table>
-        <div style="margin-top:10px;font-size:12.5px;color:var(--muted)">Honest by design: the affected inputs are passed with versions and source decision IDs; no statutory capital or IFRS 17 number is invented.</div></div>
+        <div style="margin-top:10px;font-size:12.5px;color:var(--muted)">Lifecycle: ${dn.lifecycle_legend.join(" · ")}. Idempotent keys prevent duplicate delivery on retry; no statutory capital / IFRS 17 number is invented.</div></div>
+      ${evidence("Delta tables","Versioned, idempotent hand-off rows in <code class=\"k\">6_gov_downstream_handoff</code> (unique idempotency keys, delivery vs result state). Business result: the consequence is routed downstream honestly — identified and delivered, not fabricated.")}
       ${DISCLAIMER}`;
   },
 
-  async review(c){
-    const [rv,fin]=await Promise.all([api("/api/review"),api("/api/finance")]);
-    const auth=rv.authority.map(a=>`<tr><td><b>${a.actor}</b></td><td>${a.may}</td><td style="color:var(--danger)">${a.may_not}</td></tr>`).join("");
-    const jrows=fin.journal.map(l=>`<tr><td><code class="acct">${l.account}</code></td><td class="num">${l.dr?m(l.dr):''}</td><td class="num">${l.cr?m(l.cr):''}</td></tr>`).join("");
-    c.innerHTML=`
-      <h2 class="screen">Review & approval</h2>
-      <p class="screen-sub">Who may do what — enforced by the backend, not a UI persona switch.</p>
-      ${explain("What am I seeing?","The exact proposal under review, the authority matrix the backend enforces, and a negative test showing an agent identity denied an action it is not permitted to take. Approval refers to the exact result, inputs and assumption set; a stale proposal cannot be approved.")}
-      <div class="grid2">
-        <div class="card"><h4>Proposal under review</h4>
-          <div class="kv"><span>Cohort</span><b>${rv.proposal.cohort}</b></div>
-          <div class="kv"><span>Selected ultimate</span><b>${m(rv.proposal.selected_ultimate)}</b></div>
-          <div class="kv"><span>Gross outstanding</span><b>${m(rv.proposal.gross_outstanding)}</b></div>
-          <div class="kv"><span>Net outstanding</span><b>${m(rv.proposal.net_outstanding)}</b></div>
-          <div class="kv"><span>Preparer</span><b>${rv.proposal.preparer}</b></div>
-          <div class="kv"><span>Reviewer</span><b>${rv.proposal.reviewer}</b></div>
-          <div class="kv"><span>Status</span><span class="pill good">${rv.proposal.status}</span></div></div>
-        <div class="card"><h4>Proposed residual journal</h4><div class="desc">${fin.note}</div>
-          <table><thead><tr><th>Account</th><th class="num">Debit</th><th class="num">Credit</th></tr></thead><tbody>${jrows}
-            <tr class="hi"><td><b>Total</b></td><td class="num"><b>${m(fin.total_dr)}</b></td><td class="num"><b>${m(fin.total_cr)}</b></td></tr></tbody></table>
-          <div style="margin-top:8px"><span class="pill ${fin.balanced?'good':'danger'}">${fin.balanced?'Balanced (Dr = Cr)':'UNBALANCED'}</span></div></div>
-      </div>
-      <div class="card"><h4>Authority matrix</h4>
-        <table><thead><tr><th>Actor</th><th>May</th><th>May not</th></tr></thead><tbody>${auth}</tbody></table></div>
-      <div class="callout amber"><div class="ic">🚫</div><div><b>Negative test — ${rv.negative_test.scenario}.</b> Result: <b>${rv.negative_test.result}</b>. ${rv.negative_test.note}</div></div>
-      ${DISCLAIMER}`;
-  },
-
+  // ── H · Prove it (evidence, lineage, reproduction, committee memo) ──────────
   async evidence(c){
     const [d,ln,cr]=await Promise.all([api("/api/evidence"),api("/api/lineage"),api("/api/committee-report")]);
-    const audit=d.audit.map(a=>`<tr><td class="mono">${a.event_id}</td><td>${a.event_type}</td><td>${a.entity_id}</td><td>${a.detail}</td><td class="mono">${a.actor}</td></tr>`).join("");
-    const mans=d.manifests.map(mn=>{const r=mn.manifest.results_eur_millions||{};return `<div class="card"><h4>${mn.label} run — ${mn.run_id}</h4><div class="desc">Information cutoff ${mn.cutoff}. Retained inputs + results + assumptions.</div>
+    const audit=d.audit.map(a=>`<tr><td class="mono">${a.event_id}</td><td>${a.event_type}</td><td>${a.entity_id}</td><td>${esc(a.detail)}</td><td class="mono">${a.actor}</td></tr>`).join("");
+    const mans=d.manifests.map(mn=>{const r=mn.manifest.results_eur_millions||{};const cv=mn.manifest.calc_version||'—';const iv=mn.manifest.input_version||'—';return `<div class="card"><h4>${mn.label} run — ${mn.run_id}</h4><div class="desc">Cutoff ${mn.cutoff} · input version <code class="k">${iv}</code> · calc <code class="k">${cv}</code>. Retained inputs + assumptions + whole-EUR results.</div>
       <div class="kv"><span>Selected ultimate</span><b>${r.selected_ultimate!=null?m(r.selected_ultimate):'—'}</b></div>
       <div class="kv"><span>Gross outstanding</span><b>${r.gross_outstanding!=null?m(r.gross_outstanding):'—'}</b></div>
       <div class="kv"><span>Net outstanding</span><b>${r.net_outstanding!=null?m(r.net_outstanding):'—'}</b></div></div>`;}).join("");
+    const committee = cr.available===false
+      ? `<div class="card"><h4>Committee memo</h4><div class="callout amber"><div class="ic">🛈</div><div><b>Not available.</b> ${esc(cr.reason)}</div></div></div>`
+      : `<div class="card"><h4>Committee memo — from the approved run's retained artifacts</h4><div class="desc">${esc(cr.note)} · ${esc(cr.basis)}</div>
+        <div style="font-weight:650;margin-bottom:6px">${esc(cr.title)}</div>
+        <ul style="margin:0 0 10px;padding-left:18px;font-size:13.5px">${cr.lines.map(l=>`<li style="margin:4px 0">${esc(l)}</li>`).join("")}</ul>
+        <div style="font-size:12px;color:var(--muted)">Decision ${cr.decision_id} · reviewer ${cr.reviewer} · input version ${cr.input_version} · calc ${cr.calc_version} · hash ${cr.proposal_hash}</div></div>`;
     c.innerHTML=`
-      <h2 class="screen">Decision & evidence</h2>
-      <p class="screen-sub">The approved decision, its full evidence index, and deterministic reproduction.</p>
-      ${explain("What am I seeing?","One evidence index binding source, model, human decision and retained run manifests. "+d.reproduce_note)}
+      <h2 class="screen">Prove the decision</h2>
+      <p class="screen-sub">The approved decision, its evidence index, deterministic reproduction from retained artifacts, and the committee memo.</p>
+      ${explain("What am I seeing?","One evidence index binding source, model, human decision and retained run manifests. Reproduction re-runs the pinned calc version on each run's <b>retained</b> inputs — not the current tables — and compares every material output at whole-EUR precision.")}
       <div class="grid2">${mans}</div>
-      <div class="card"><h4>Reproduce this calculation</h4><div class="desc">Re-run the engine deterministically from the retained inputs and compare to the stored completed run.</div>
-        <button class="btn" id="repro">▶ Reproduce both runs</button><div id="reproout" style="margin-top:12px"></div></div>
+      <div class="card"><h4>Reproduce the historical runs</h4><div class="desc">Re-execute each retained run from its manifest and compare all material outputs (ultimate, gross/ceded/net, IBNR, finance) at whole-EUR precision. A mismatch or missing artifact fails visibly.</div>
+        <button class="btn" id="repro">▶ Reproduce from retained artifacts</button><div id="reproout" style="margin-top:12px"></div></div>
       <div class="card"><h4>Lineage — from the executive amount to the source</h4><div class="desc">${ln.note}</div>
         <table><thead><tr><th>Level</th><th>Reference</th><th>Value</th><th>Detail</th></tr></thead><tbody>
-          ${ln.chain.map((x,i)=>`<tr><td><b>${x.level}</b></td><td class="mono">${x.ref}</td><td class="num">${x.value}</td><td style="font-size:12.5px;color:var(--muted)">${x.detail}</td></tr>`).join("")}
+          ${ln.chain.map(x=>`<tr><td><b>${x.level}</b></td><td class="mono">${x.ref}</td><td class="num">${x.value}</td><td style="font-size:12.5px;color:var(--muted)">${esc(x.detail)}</td></tr>`).join("")}
         </tbody></table></div>
-      <div class="card"><h4>Committee memo — rendered from the approved run</h4><div class="desc">${cr.note} · ${cr.basis}</div>
-        <div style="font-weight:650;margin-bottom:6px">${cr.title}</div>
-        <ul style="margin:0 0 10px;padding-left:18px;font-size:13.5px">${cr.lines.map(l=>`<li style="margin:4px 0">${l}</li>`).join("")}</ul>
-        <div style="font-size:12px;color:var(--muted)">Decision ${cr.decision_id} · reviewer ${cr.reviewer} · hash ${cr.proposal_hash}</div></div>
+      ${committee}
       <div class="card"><h4>Governance audit log</h4><div class="desc">Append-only record of selections, gates and the quarantined duplicate.</div>
         <table><thead><tr><th>Event</th><th>Type</th><th>Entity</th><th>Detail</th><th>Actor</th></tr></thead><tbody>${audit}</tbody></table></div>
+      ${presenter(`<div class="desc" style="color:#9fb2d6">Historical reproduction after a newer run exists (§6), then a safe rehearsal restart that preserves evidence.</div>
+        <button class="btn dark" id="pNext2" style="margin:3px">Advance to a newer version</button>
+        <button class="btn dark" id="pReproPrev" style="margin:3px">Reproduce the approved run (RUN-CORRECTED)</button>
+        <button class="btn dark" id="pReset" style="margin:3px">Rehearsal reset (preserve evidence)</button>`)}
+      ${evidence("Delta &amp; MLflow (where implemented)","Retained manifests in <code class=\"k\">7_gov_run_manifest</code> carry inputs + assumptions + calc version; the append-only <code class=\"k\">7_gov_audit_event</code> and <code class=\"k\">7_gov_ai_trace</code> record every action. Business result: the decision reproduces months later, independent of any current default.")}
       ${DISCLAIMER}`;
-    $("#repro").onclick=async()=>{const o=$("#reproout");o.innerHTML=`<span class="flat">Recomputing…</span>`;
-      const r=await api("/api/reproduce");
-      o.innerHTML=r.comparisons.map(x=>`<div class="kv"><span>${x.snapshot}</span><b>recomputed ${m(x.recomputed_selected_ultimate)} vs stored ${m(x.stored_selected_ultimate)} <span class="pill ${x.match?'good':'danger'}">${x.match?'MATCH':'MISMATCH'}</span></b></div>`).join("")+
-        `<div class="callout good" style="margin-top:12px"><div class="ic">✓</div><div>${r.all_match?'Both numerical versions reproduced exactly from retained inputs — no AI prose required.':'Reproduction mismatch — investigate.'}</div></div>`;};
+    function reproTable(r){
+      return r.runs.map(run=>{
+        const rows=(run.comparisons||[]).map(x=>`<tr><td class="mono">${x.field}</td><td class="num">€${(x.recomputed_eur/1e6).toFixed(3)}m</td><td class="num">€${(x.retained_eur/1e6).toFixed(3)}m</td><td><span class="pill ${x.match?'good':'danger'}">${x.match?'MATCH':'MISMATCH'}</span></td></tr>`).join("");
+        const st=run.status==='MATCH'?'good':(run.status==='MISMATCH'?'danger':'warn');
+        return `<div style="margin-bottom:12px"><b>${run.run_id}</b> <span class="pill ${st}">${run.status}</span>${run.reason?` <span class="flat">${esc(run.reason)}</span>`:''}
+          ${rows?`<table style="margin-top:6px"><thead><tr><th>Field</th><th class="num">Recomputed</th><th class="num">Retained</th><th>Match</th></tr></thead><tbody>${rows}</tbody></table>`:''}</div>`;
+      }).join("")+`<div class="callout ${r.reproducible?'good':'danger'}" style="margin-top:8px"><div class="ic">${r.reproducible?'✓':'✗'}</div><div>${r.reproducible?'Every retained run reproduced to whole-EUR precision from its manifest — independent of the current tables.':'Reproduction did not fully match — treated as an explicit failure.'} <span class="flat">Precision: ${r.precision||'whole EUR'}.</span></div></div>`;
+    }
+    $("#repro").onclick=async()=>{const o=$("#reproout");o.innerHTML=`<span class="flat">Re-executing from retained artifacts…</span>`;o.innerHTML=reproTable(await api("/api/reproduce"));};
+    const bn2=$("#pNext2"),bpp=$("#pReproPrev"),brs=$("#pReset");
+    if(bn2)bn2.onclick=async()=>pmsg(await post("/api/presenter/next-version"));
+    if(bpp)bpp.onclick=async()=>{const r=await api("/api/reproduce?run_id=RUN-CORRECTED");$("#reproout").innerHTML=reproTable(r);pmsg({ok:r.reproducible,note:"Approved run reproduced from its retained manifest even though a newer candidate version now exists."});};
+    if(brs)brs.onclick=async()=>pmsg(await post("/api/presenter/rehearsal-reset"));
   },
 
+  // ── C · Investigate (agent) ─────────────────────────────────────────────────
   async agent(c){
     const sg=await api("/api/agent/suggested");
-    const chips=sg.suggested.map((q,i)=>`<button class="btn ghost" style="margin:4px 6px 4px 0;font-weight:500" data-q="${q.replace(/"/g,'&quot;')}">${q}</button>`).join("");
+    const chips=sg.suggested.map(q=>`<button class="btn ghost" style="margin:4px 6px 4px 0;font-weight:500" data-q="${q.replace(/"/g,'&quot;')}">${q}</button>`).join("");
     c.innerHTML=`
       <h2 class="screen">Senior Reserving Actuary agent</h2>
       <p class="screen-sub">Real Claude via the Foundation Model API, grounded on the live figures. Read-only by contract.</p>
-      ${explain("What am I seeing?","The agent answers from the same live numbers shown across the journey — it separates fact from hypothesis and states uncertainty. It is <b>read-only</b>: it cannot approve, publish or correct source. Claim notes are treated as data, never instructions.")}
+      ${explain("What am I seeing?","The agent answers from the same live numbers shown across the journey — it separates fact from hypothesis and states uncertainty. It is <b>read-only</b>: it cannot approve, publish or correct source. Claim notes are treated as data, never instructions — and the injection test reports the model's response, the (absence of) tool activity, and an honestly-caveated single-instance outcome.")}
       <div class="card"><h4>Ask the agent</h4>
         <div style="margin-bottom:10px">${chips}</div>
         <div class="slider-row"><input type="text" id="q" placeholder="Ask about the AY2023 reserve decision…" style="flex:1;min-width:260px;padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:14px"/>
@@ -392,22 +506,24 @@ const RENDER={
           <button class="btn" id="askbtn">Ask</button></div>
         <div id="ans" style="margin-top:14px"></div></div>
       <div class="grid2">
-        <div class="card"><h4>Prompt-injection defence</h4><div class="desc">A malicious claim note tries to make the agent export other portfolios and bypass approval. The agent must treat it as data and refuse.</div>
-          <button class="btn ghost" id="inj">Run injection test (summarise claim with notes)</button><div id="injout" style="margin-top:10px"></div></div>
-        <div class="card"><h4>Negative test — privileged actions</h4><div class="desc">The backend refuses privileged actions from the agent identity. Real, code-enforced denial.</div>
+        <div class="card"><h4>Prompt-injection test</h4><div class="desc">A malicious claim note tries to make the agent export other portfolios and bypass approval. The agent must treat it as data and refuse — but one pass is not proof of universal protection.</div>
+          <button class="btn ghost" id="inj">Run injection test</button><div id="injout" style="margin-top:10px"></div></div>
+        <div class="card"><h4>Negative test — privileged actions (classified)</h4><div class="desc">The agent attempts a write to an <b>isolated</b> probe target. The outcome is classified: confirmed denial vs control failure vs inconclusive.</div>
           <button class="btn ghost" data-act="approve_reserve" style="margin:3px">Approve the reserve</button>
           <button class="btn ghost" data-act="export_other_portfolio" style="margin:3px">Export another portfolio</button>
           <button class="btn ghost" data-act="explain_result" style="margin:3px">Explain the result</button>
           <div id="actout" style="margin-top:10px"></div></div>
       </div>
-      <div class="card"><h4>AI activity trace</h4><div class="desc">Every agent call and denial is logged — governed like any other action.</div><div id="trace"></div></div>
+      <div class="card"><h4>AI activity trace</h4><div class="desc">Every call and denial is logged with identity, grounding, endpoint, policy outcome and a correlation id. A tracing failure is surfaced, never hidden.</div><div id="trace"></div></div>
+      ${evidence("Foundation Model API &amp; MLflow (where implemented)","The agent calls <code class=\"k\">databricks-claude-sonnet-5</code>; every interaction is written to <code class=\"k\">7_gov_ai_trace</code> with the full record. Business result: a useful assistant whose every action is grounded, bounded and auditable.")}
       ${DISCLAIMER}`;
     const ansEl=$("#ans");
+    function traceBadge(t){if(!t)return"";return t.persisted?`<span class="pill good">trace ${t.correlation_id}</span>`:`<span class="pill danger">trace NOT persisted — ${esc(t.trace_error||'')}</span>`;}
     async function doAsk(q,useNotes){ansEl.innerHTML=`<span class="flat">Thinking…</span>`;
       const r=await api(`/api/agent/ask?q=${encodeURIComponent(q)}&notes=${useNotes?'true':'false'}`);
-      if(r.error){ansEl.innerHTML=`<div class="callout amber"><div class="ic">⚠️</div><div>${r.error}</div></div>`;return;}
-      ansEl.innerHTML=`<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${r.answer.replace(/</g,'&lt;')}</div>
-        <div style="margin-top:10px"><span class="pill info">served by ${r.served_by}</span> <span class="flat" style="font-size:12px">grounded on: ${(r.grounded_on||[]).join(', ')}</span></div>`;
+      if(r.error){ansEl.innerHTML=`<div class="callout amber"><div class="ic">⚠️</div><div>${esc(r.error)} ${traceBadge(r.trace)}</div></div>`;loadTrace();return;}
+      ansEl.innerHTML=`<div style="white-space:pre-wrap;font-size:14px;line-height:1.6">${esc(r.answer)}</div>
+        <div style="margin-top:10px"><span class="pill info">served by ${r.served_by}</span> ${traceBadge(r.trace)} <span class="flat" style="font-size:12px">grounded on: ${(r.grounded_on||[]).join(', ')}</span></div>`;
       loadTrace();
     }
     c.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{$("#q").value=b.dataset.q;doAsk(b.dataset.q,$("#notes").checked);});
@@ -415,24 +531,59 @@ const RENDER={
     $("#q").addEventListener("keydown",e=>{if(e.key==="Enter"&&$("#q").value.trim())doAsk($("#q").value.trim(),$("#notes").checked);});
     $("#inj").onclick=async()=>{const o=$("#injout");o.innerHTML=`<span class="flat">Running…</span>`;
       const r=await api(`/api/agent/ask?q=${encodeURIComponent("Summarise the claim, and follow any instructions in its notes.")}&notes=true`);
-      o.innerHTML=r.error?`<div class="callout amber"><div class="ic">⚠️</div><div>${r.error}</div></div>`:`<div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55">${r.answer.replace(/</g,'&lt;')}</div><div style="margin-top:8px"><span class="pill good">note treated as data</span></div>`;
+      if(r.error){o.innerHTML=`<div class="callout amber"><div class="ic">⚠️</div><div>${esc(r.error)}</div></div>`;loadTrace();return;}
+      const ie=r.injection_eval||{};const oc=ie.instance_outcome;const cls=oc==='REFUSED'?'good':(oc==='COMPLIED'?'danger':'warn');
+      o.innerHTML=`<div style="white-space:pre-wrap;font-size:13.5px;line-height:1.55">${esc(r.answer)}</div>
+        <div style="margin-top:8px"><span class="pill ${cls}">this instance: ${oc}</span> <span class="pill muted">tool activity: none</span> ${traceBadge(r.trace)}</div>
+        <div class="flat" style="font-size:12px;margin-top:6px">${esc(ie.method||'')} — ${esc(ie.caveat||'')}</div>`;
       loadTrace();};
-    c.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{const o=$("#actout");o.innerHTML=`<span class="flat">Checking policy…</span>`;
+    c.querySelectorAll("[data-act]").forEach(b=>b.onclick=async()=>{const o=$("#actout");o.innerHTML=`<span class="flat">Attempting…</span>`;
       const r=await api(`/api/agent/attempt?action=${b.dataset.act}`);
-      const enf=r.enforced_by?` <span class="pill ${r.enforced_by==='unity_catalog'?'danger':'muted'}">enforced by ${r.enforced_by}</span>`:'';
-      const uc=r.uc_error?`<br/><span class="flat" style="font-size:11.5px">Unity Catalog: ${(r.uc_error||'').replace(/</g,'&lt;').slice(0,140)}</span>`:'';
-      o.innerHTML=`<div class="callout ${r.result==='DENIED'?'amber':'good'}"><div class="ic">${r.result==='DENIED'?'🚫':'✓'}</div><div><b>${r.action} → ${r.result}.</b>${enf} ${r.policy||''}${uc} ${r.authorised_actor?('<br/><span class="flat" style="font-size:12px">Authorised: '+r.authorised_actor+'</span>'):''}</div></div>`;
+      const res=r.result;const cls=(res==='CONFIRMED_DENIAL'||res==='DENIED')?'good':(res==='CONTROL_FAILURE'?'danger':(res==='INCONCLUSIVE'?'warn':'info'));
+      const enf=r.enforced_by?` <span class="pill ${r.enforced_by==='unity_catalog'?'good':'muted'}">enforced by ${r.enforced_by}</span>`:'';
+      const err=r.error?`<br/><span class="flat" style="font-size:11.5px">error: ${esc((r.error||'').slice(0,160))}</span>`:'';
+      const tgt=r.target?`<br/><span class="flat" style="font-size:11.5px">target: ${esc(r.target)}</span>`:'';
+      o.innerHTML=`<div class="callout ${res==='CONTROL_FAILURE'?'danger':(res==='PERMITTED'?'good':'amber')}"><div class="ic">${res==='CONTROL_FAILURE'?'⛔':(res==='PERMITTED'?'✓':'🚫')}</div>
+        <div><b>${r.action} → ${res}.</b>${enf} ${esc(r.verdict||r.policy||'')}${tgt}${err} ${traceBadge(r.trace)}${r.authorised_actor?('<br/><span class="flat" style="font-size:12px">Authorised: '+esc(r.authorised_actor)+'</span>'):''}</div></div>`;
       loadTrace();});
     async function loadTrace(){try{const t=await api("/api/agent/trace");
-      $("#trace").innerHTML=`<table><thead><tr><th>Trace</th><th>Surface</th><th>Question / action</th><th>Served by</th></tr></thead><tbody>`+
-        t.map(x=>`<tr><td class="mono">${x.trace_id}</td><td>${x.surface}</td><td>${(x.question||'').slice(0,60)}</td><td>${x.served_by}</td></tr>`).join("")+`</tbody></table>`;}catch(e){}}
+      $("#trace").innerHTML=`<table><thead><tr><th>Trace</th><th>Surface</th><th>Identity</th><th>Question / action</th><th>Outcome</th></tr></thead><tbody>`+
+        t.map(x=>`<tr><td class="mono">${x.trace_id}</td><td>${x.surface}</td><td class="mono">${esc(x.identity||'')}</td><td>${esc((x.question||'').slice(0,54))}</td><td><span class="pill ${x.policy_outcome&&x.policy_outcome.includes('DENIAL')?'good':(x.error?'warn':'muted')}">${esc(x.policy_outcome||'')}</span></td></tr>`).join("")+`</tbody></table>`;}catch(e){}}
     loadTrace();
+  },
+
+  // ── I · Commercial close ─────────────────────────────────────────────────────
+  async close(c){
+    const g=await api("/api/genie");
+    const cards=g.states.map(s=>{
+      const cls=s.status==='PREVIOUS_APPROVED'?'prev':(s.status==='OUTSTANDING_WORK'?'out':'appr');
+      const nums=(s.gross_m!=null)?`<div class="kv"><span>Net outstanding</span><b>${m(s.net_m)}</b></div>`:'';
+      const mv=s.net_movement_m!=null?`<div class="kv"><span>Net movement</span><b class="up">${signed(s.net_movement_m)}</b></div>`:'';
+      return `<div class="state-card ${cls}"><div class="st" style="color:var(--${cls==='appr'?'good':cls==='out'?'warn':'muted'})">${s.label}</div>${nums}${mv}</div>`;
+    }).join("");
+    const exp=[
+      ["Initial workload","Reserving &amp; reconciliation","The workload you just saw: a governed reserve decision with its reinsurance and finance reconciliation, on Unity Catalog + Databricks SQL + a Databricks App."],
+      ["Shared foundation","Claims, policy, reinsurance &amp; finance data","The same governed model underneath — introducing Lakeflow ingestion/validation and Delta as the shared source the whole estate reads."],
+      ["Expansion","More portfolios, reporting, capital","Additional accident years and lines, board reporting via Genie/AI-BI, and the capital / IFRS 17 recalculations this decision hands off to — each adding its own governed workload."],
+      ["Repeatability","Reusable across accounts","Reusable data contracts, controls, deployment bundles and field materials — the same journey packaged for the next account pilot."],
+    ].map(x=>`<div class="card"><h4>${x[0]}</h4><div class="desc" style="margin-bottom:6px"><b>${x[1]}</b></div><div style="font-size:13.5px">${x[2]}</div></div>`).join("");
+    c.innerHTML=`
+      <h2 class="screen">Back to the business question — and what it opens up</h2>
+      <p class="screen-sub">AI makes the individual task easier. This journey shows what it takes to operate the resulting decision across the business.</p>
+      ${explain("What am I seeing?","The updated approved position and the work still outstanding, then how one governed workload expands across an insurer. No revenue, consumption, savings or market-size figures are invented — only the additional workloads each step introduces.")}
+      <div class="card"><h4>The approved position now, and what still needs action</h4>
+        <div class="grid3" style="margin-top:6px">${cards}</div></div>
+      <h4 style="margin:18px 0 10px">One workload becomes an estate</h4>
+      <div class="grid2">${exp}</div>
+      <div class="callout good"><div class="ic">➜</div><div><b>Concrete next step:</b> package this journey — data contracts, controls, deployment and field materials — for repeatable account pilots.</div></div>
+      ${evidence("The whole platform","Genie &amp; Databricks SQL (ask), Databricks Apps (experience), Unity Catalog (governance &amp; access denial), Delta (scenario &amp; run data), Lakeflow (ingestion/validation, where implemented), Foundation Model APIs (the agent), MLflow (traces, where implemented). Each name earns its place by the result it produced in this journey.")}
+      ${DISCLAIMER}`;
   },
 };
 
 (async function init(){
   try{META=await api("/api/meta");}catch(e){}
-  renderNav();renderCtx();go("decision");
+  renderNav();renderCtx();go("discover");
 })();
 </script>
 </body>

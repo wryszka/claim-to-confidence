@@ -119,6 +119,47 @@ Delivered the remaining self-contained items (Option B / Switch Roles skipped pe
 - All redeployed and verified live; acceptance now **17 proven** (see ACCEPTANCE_TESTS.md).
   Screenshot: `docs/screen_F_evidence.png`.
 
+## 2026-09-15 — refined implementation brief (correct the control defects + complete A–H)
+
+Worked from the refined "internal demo" brief. Everything here is **local repo work**, done and
+verified offline; all workspace-dependent verification is **pending** (`databricks auth login`
+was invalid — interactive re-login required, then redeploy). Do not treat the previously-live
+instance as current: the schema and code changed materially.
+
+**§4 control-defect corrections (the substance) — all proven locally:**
+- **Permission test** now writes to an **isolated** `7_gov_permission_probe` (never the approvals
+  table) and **classifies** the outcome: CONFIRMED_DENIAL vs CONTROL_FAILURE vs INCONCLUSIVE — an
+  infrastructure error can no longer masquerade as a permission denial.
+- **Approval integrity**: one explicit `approved_decision()` selector (scenario+proposal+run+
+  decision id); no `APPROVED LIMIT 1`, no fabricated reviewer/fallback. review/committee/lineage
+  resolve the SAME artifact and show NOT_APPROVED / "unavailable" honestly when none exists.
+- **Historical reproduction** re-runs the pinned calc version on each run's **retained manifest**
+  inputs (not current tables), compares ALL material outputs at **whole-EUR** precision, and fails
+  visibly on a missing manifest or unsupported calc version.
+- **AI trace** expanded to identity/scenario/run/response/grounding/endpoint/config/tool-calls/
+  error/policy/correlation/timestamp; `ask()` returns whether the trace persisted (SPA shows a red
+  badge on failure). Injection test reports the response + (no) tool activity + a **caveated
+  single-instance** outcome — the unconditional "note treated as data" badge is gone.
+- **Quality gate** tied to the candidate input version (old PASS ≠ new authorisation); **proposals**
+  bound to input version + assumption fingerprint + calc version → **staleness detectable**;
+  **separation of duties** enforced (preparer ≠ reviewer); the app SP cannot approve (real UC denial).
+- **Downstream** versioned + idempotent (unique keys), delivery vs result state distinct; finance
+  journal marked **GENERATED_NOT_POSTED**.
+
+**§3 A–H + §5:** SPA rewritten to 9 screens (Discover/Genie → … → Close), each with a "view
+evidence" chip and a collapsed presenter panel. **§6:** `server/presenter.py` — token-gated,
+scenario-scoped POST mutations (defect/correct/proposal/approve/next-version/rehearsal-reset),
+plus `/api/preflight` and `tools/preflight.py`. **§3A/H:** `tools/genie_space.py` (create when
+auth returns; Discover shows a documented setup path until then — never a relabelled agent).
+**§8:** `tools/integration_test.py` — 31/31 over the real server code; oracle still 43/43.
+**§7:** `docs/DEMO_RUN.md` rewritten as the numbered runbook (10 elements/step, no timings);
+new `docs/TECHNICAL_SETUP.md`, `docs/TEST_RUN_HANDOFF.md`; `docs/ACCEPTANCE_TESTS.md` reconciled
+(one status each, local vs deployed, PENDING where workspace-dependent).
+
+**Design decisions (reversible):** presenter token defaults to "present" (change before a shared
+run); scenario id `SC-BASE`; the live reviewer-approval path stays honestly deferred (needs an
+account-level group) rather than faked with a persona dropdown.
+
 ## Watch-outs for the next session
 
 - The app SP's warehouse ACL is known to get dropped across the estate periodically
