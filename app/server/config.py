@@ -11,6 +11,14 @@ FM_ENDPOINT = os.getenv("FM_ENDPOINT", "databricks-claude-sonnet-5")
 ENTITY = os.getenv("ENTITY_NAME", "Bricksurance SE")
 HUB_APP_URL = os.getenv("HUB_APP_URL", "")
 
+# Genie (spec §3A/§3H). GENIE_SPACE_ID enables the business-question entry point; the app
+# builds a native Genie link from it. Empty until the space is created in the workspace —
+# the UI then shows an honest "not configured" state with a documented setup path, never a
+# relabelled grounded-Q&A endpoint pretending to be Genie.
+GENIE_SPACE_ID = os.getenv("GENIE_SPACE_ID", "")
+WORKSPACE_HOST = os.getenv("DATABRICKS_HOST", os.getenv("WORKSPACE_HOST", ""))
+SCENARIO_ID = os.getenv("SCENARIO_ID", "SC-BASE")
+
 
 def fqn(table: str) -> str:
     return f"{CATALOG}.{SCHEMA}.`{table}`"

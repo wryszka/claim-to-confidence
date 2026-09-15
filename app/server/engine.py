@@ -41,6 +41,31 @@ def to_millions(x, dp=2) -> float:
     return float((_d(x) / MILLION).quantize(q, rounding=ROUND_HALF_UP))
 
 
+# The engine's calculation version. Retained with every run so a historical reproduction
+# can refuse to compare against a run made by an incompatible calculation version.
+CALC_VERSION = "1.0"
+
+
+def assumption_fingerprint(incurred_cdf, paid_cdf, earned_premium, expected_loss_ratio,
+                           weights, quota_share_pct) -> str:
+    """Stable 16-hex fingerprint of the governed assumptions behind a valuation.
+
+    A proposal is bound to this fingerprint (plus its input version). If the assumptions
+    or inputs change after the proposal is created, the fingerprint no longer matches and
+    the proposal is detected as STALE and cannot be approved — a new proposal is required
+    (spec §3E / §4 "approval integrity"). Deterministic across the deploy that seeds it
+    and the app that re-derives it, so the two always agree when nothing has changed.
+    """
+    import hashlib
+    parts = [
+        str(_d(incurred_cdf)), str(_d(paid_cdf)), str(int(_d(earned_premium))),
+        str(_d(expected_loss_ratio)),
+        ",".join(f"{k}={_d(weights[k])}" for k in sorted(weights)),
+        str(_d(quota_share_pct)),
+    ]
+    return hashlib.sha256("|".join(parts).encode()).hexdigest()[:16]
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Method engine — the four standard property & casualty reserving indications.
 # All amounts in whole EUR. `incurred_cdf` / `paid_cdf` are the SELECTED cumulative

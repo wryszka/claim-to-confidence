@@ -51,6 +51,23 @@ def run(profile, warehouse_id):
 
     s = W.scenario()
     meta = s["meta"]
+
+    # ── scenario identity + versioning (spec §4 quality gate / approval integrity) ──
+    # Every mutable operation is scoped by a scenario id, and every result is bound to a
+    # candidate input version and a calculation version. The approved decision retains the
+    # exact input version and assumption fingerprint it was approved against, so a later
+    # change makes any earlier proposal detectably stale.
+    ap0 = s["apriori"]
+    SCENARIO_ID = "SC-BASE"
+    INPUT_VERSION = "IV-2026-07-06-CORR-01"           # the corrected inputs the approval is bound to
+    INPUT_VERSIONS = {"RUN-INITIAL": "IV-2026-07-03-INIT-01", "RUN-CORRECTED": INPUT_VERSION}
+    CALC_VERSION = E.CALC_VERSION
+    weights0 = {k: Decimal(v) for k, v in meta["selection_weights"].items()}
+    ASSUMPTION_HASH = E.assumption_fingerprint(
+        Decimal(meta["selected_incurred_cdf"]), Decimal(meta["selected_paid_cdf"]),
+        ap0["earned_premium"], Decimal(meta["expected_loss_ratio"]), weights0,
+        Decimal(meta["quota_share_pct"]))
+
     stmts = []
 
     # ── evidence-preserving reset (T21): archive prior evidence before the drop ──
@@ -68,7 +85,8 @@ def run(profile, warehouse_id):
     arch = f"{CATALOG}.claim_to_confidence_archive"
     _try(f"CREATE SCHEMA IF NOT EXISTS {arch} COMMENT '{LABEL} retained evidence from prior scenario instances (reset never deletes it)'")
     archived = 0
-    for tbl in ("7_gov_audit_event", "7_gov_run_manifest", "6_gov_decision", "7_gov_ai_trace"):
+    for tbl in ("7_gov_audit_event", "7_gov_run_manifest", "6_gov_decision", "6_gov_proposal",
+                "6_gov_downstream_handoff", "7_gov_ai_trace"):
         if _try(f"CREATE TABLE {arch}.`{tbl}__{stamp}` AS SELECT * FROM {fq}.`{tbl}`"):
             archived += 1
     if archived:
@@ -91,6 +109,20 @@ def run(profile, warehouse_id):
     for a in s["chart_of_accounts"]:
         stmts.append(f"INSERT INTO {fq}.`0_cfg_account` VALUES "
                      f"('{a['account_code']}','{esc(a['account_name'])}','{a['account_type']}')")
+
+    # ── 0_cfg scenario state (the ONLY mutable table the presenter utility touches) ──
+    # Scoped by scenario_id so a rehearsal reset never drops shared evidence or the schema.
+    # candidate_input_version = the input version a NEW result would be built on;
+    # approved_input_version  = the version the current approved decision was built on;
+    # a critical DQ failure raises defect_active, which the readiness gate reads to BLOCK
+    # any create/release/approve for that candidate version.
+    stmts.append(f"CREATE TABLE {fq}.`0_cfg_scenario_state` (scenario_id STRING, "
+                 f"candidate_input_version STRING, approved_input_version STRING, defect_active BOOLEAN, "
+                 f"defect_note STRING, calc_version STRING, updated_at STRING, updated_by STRING) "
+                 f"COMMENT '{LABEL} mutable per-scenario state — candidate/approved input versions + defect flag'")
+    _now0 = datetime.now(timezone.utc).isoformat()
+    stmts.append(f"INSERT INTO {fq}.`0_cfg_scenario_state` VALUES ('{SCENARIO_ID}','{INPUT_VERSION}',"
+                 f"'{INPUT_VERSION}',false,'','{CALC_VERSION}','{_now0}','deploy')")
 
     # ── 1_raw source deliveries / claims / transactions ──────────────────────
     stmts.append(f"CREATE TABLE {fq}.`1_raw_source_delivery` (delivery_id STRING, received_ts STRING, "
@@ -251,57 +283,104 @@ def run(profile, warehouse_id):
                      f"'{esc(detail)}','{actor}','{now}')")
 
     # ── 7_gov AI activity trace (agent calls + denials; app SP gets MODIFY) ───
-    stmts.append(f"CREATE TABLE {fq}.`7_gov_ai_trace` (trace_id STRING, surface STRING, question STRING, "
-                 f"served_by STRING, created_at STRING) COMMENT '{LABEL} every agent call and denial, governed'")
+    # Full trace per spec §4: who, which scenario/run, the question and response, the
+    # grounding references, the model endpoint and relevant config, any tool calls, errors,
+    # the evaluated policy outcome, and a correlation id + timestamp. Written best-effort but
+    # the caller learns whether the write persisted (a tracing failure is surfaced, not hidden).
+    stmts.append(f"CREATE TABLE {fq}.`7_gov_ai_trace` (trace_id STRING, correlation_id STRING, surface STRING, "
+                 f"identity STRING, scenario_id STRING, run_id STRING, question STRING, response STRING, "
+                 f"grounding_refs STRING, endpoint STRING, model_config STRING, tool_calls STRING, error STRING, "
+                 f"policy_outcome STRING, created_at STRING) "
+                 f"COMMENT '{LABEL} full AI activity trace — identity, grounding, endpoint, tool calls, policy outcome'")
+
+    # ── 7_gov permission probe — ISOLATED negative-test target (spec §4 permission test) ──
+    # The agent's write attempt for the negative test targets THIS table, never the real
+    # approvals table. The app/agent service principal is deliberately NOT granted MODIFY on
+    # it, so a genuine attempt is denied at the data tier — but if the grant were ever wrong
+    # and the write unexpectedly succeeded, it lands here as an inert probe row and can never
+    # become a valid business approval. Rows here are test artefacts only.
+    stmts.append(f"CREATE TABLE {fq}.`7_gov_permission_probe` (probe_id STRING, attempted_by STRING, "
+                 f"attempted_at STRING, target STRING, note STRING) "
+                 f"COMMENT '{LABEL} isolated target for the permission negative test — never a business approval'")
+
+    import hashlib
+    PROPOSAL_ID, RUN_ID_C, DECISION_ID = "PROP-2026Q2-CM-001", "RUN-CORRECTED", "DEC-2026Q2-CM"
+    SELECTION_ID = "SEL-2026Q2-CM-INCURRED"
+    PREPARER, REVIEWER = "s.okonkwo@bricksurance.example", "chief.actuary@bricksurance.example"
+    phash = hashlib.sha256(
+        f"{PROPOSAL_ID}|{INPUT_VERSION}|{ASSUMPTION_HASH}|{int(vc['selected_ultimate'])}|"
+        f"{int(vc['gross_outstanding'])}".encode()).hexdigest()[:16]
+
+    # ── 6_gov proposal (bound to the exact input version + assumption fingerprint) ──
+    # A proposal is the preparer's candidate. It records the input version and the
+    # assumption fingerprint it was built on, plus the calc version. Approval later checks
+    # these still match the live scenario; if inputs or assumptions have moved, the proposal
+    # is STALE and cannot be approved — a new proposal must be created (spec §3E / §4).
+    stmts.append(f"CREATE TABLE {fq}.`6_gov_proposal` (proposal_id STRING, scenario_id STRING, selection_id STRING, "
+                 f"run_id STRING, cohort STRING, input_version STRING, assumption_hash STRING, calc_version STRING, "
+                 f"selected_ultimate_eur BIGINT, gross_outstanding_eur BIGINT, gross_ibnr_eur BIGINT, "
+                 f"ceded_outstanding_eur BIGINT, net_outstanding_eur BIGINT, proposal_hash STRING, status STRING, "
+                 f"preparer STRING, created_at STRING) "
+                 f"COMMENT '{LABEL} preparer proposals bound to input version + assumption fingerprint (staleness detectable)'")
+    stmts.append(f"INSERT INTO {fq}.`6_gov_proposal` VALUES ('{PROPOSAL_ID}','{SCENARIO_ID}','{SELECTION_ID}',"
+                 f"'{RUN_ID_C}','AY2023 Commercial Motor','{INPUT_VERSION}','{ASSUMPTION_HASH}','{CALC_VERSION}',"
+                 f"{int(vc['selected_ultimate'])},{int(vc['gross_outstanding'])},{int(vc['gross_ibnr'])},"
+                 f"{int(vc['ceded_outstanding'])},{int(vc['net_outstanding'])},'{phash}','APPROVED','{PREPARER}','{now}')")
 
     # ── 6_gov decision (the APPROVED proposal). Seeded here by the SCHEMA OWNER.
     #    The app/agent service principal is deliberately NOT granted MODIFY on this
     #    table, so any attempt to write an approval is denied by Unity Catalog itself —
-    #    real data-tier authority enforcement, not just a UI/code check. ───────────
-    stmts.append(f"CREATE TABLE {fq}.`6_gov_decision` (decision_id STRING, proposal_id STRING, cohort STRING, "
-                 f"selected_ultimate_eur BIGINT, gross_outstanding_eur BIGINT, net_outstanding_eur BIGINT, "
-                 f"status STRING, preparer STRING, reviewer STRING, decided_at STRING, proposal_hash STRING) "
+    #    real data-tier authority enforcement, not just a UI/code check. Selected downstream
+    #    by explicit (scenario_id, proposal_id, run_id, decision_id) — never `APPROVED LIMIT 1`.
+    stmts.append(f"CREATE TABLE {fq}.`6_gov_decision` (decision_id STRING, scenario_id STRING, proposal_id STRING, "
+                 f"run_id STRING, selection_id STRING, cohort STRING, input_version STRING, calc_version STRING, "
+                 f"assumption_hash STRING, selected_ultimate_eur BIGINT, gross_outstanding_eur BIGINT, "
+                 f"ceded_outstanding_eur BIGINT, net_outstanding_eur BIGINT, gross_ibnr_eur BIGINT, status STRING, "
+                 f"preparer STRING, reviewer STRING, decided_at STRING, proposal_hash STRING) "
                  f"COMMENT '{LABEL} approved reserve decision — writable only by an authorised human role, not the app/agent SP'")
-    import hashlib
-    phash = hashlib.sha256(f"SNAP-CORRECTED|{int(vc['selected_ultimate'])}|{int(vc['gross_outstanding'])}".encode()).hexdigest()[:16]
-    stmts.append(f"INSERT INTO {fq}.`6_gov_decision` VALUES ('DEC-2026Q2-CM','SEL-2026Q2-CM-INCURRED',"
-                 f"'AY2023 Commercial Motor',{int(vc['selected_ultimate'])},{int(vc['gross_outstanding'])},"
-                 f"{int(vc['net_outstanding'])},'APPROVED','s.okonkwo@bricksurance.example',"
-                 f"'chief.actuary@bricksurance.example','{now}','{phash}')")
+    stmts.append(f"INSERT INTO {fq}.`6_gov_decision` VALUES ('{DECISION_ID}','{SCENARIO_ID}','{PROPOSAL_ID}',"
+                 f"'{RUN_ID_C}','{SELECTION_ID}','AY2023 Commercial Motor','{INPUT_VERSION}','{CALC_VERSION}',"
+                 f"'{ASSUMPTION_HASH}',{int(vc['selected_ultimate'])},{int(vc['gross_outstanding'])},"
+                 f"{int(vc['ceded_outstanding'])},{int(vc['net_outstanding'])},{int(vc['gross_ibnr'])},'APPROVED',"
+                 f"'{PREPARER}','{REVIEWER}','{now}','{phash}')")
 
     # ── 6_gov downstream hand-off (HONEST: affected inputs, not fabricated results) ──
     gross_mv = int(vc["gross_outstanding"] - vi["gross_outstanding"])
     ceded_mv = int(vc["ceded_outstanding"] - vi["ceded_outstanding"])
     net_mv = int(vc["net_outstanding"] - vi["net_outstanding"])
-    stmts.append(f"CREATE TABLE {fq}.`6_gov_downstream_handoff` (domain STRING, target STRING, "
-                 f"affected_input STRING, input_movement_eur BIGINT, currency STRING, valuation_date STRING, "
-                 f"cohort_map STRING, source_decision_id STRING, status STRING, note STRING) "
-                 f"COMMENT '{LABEL} versioned inputs passed downstream; status is honest — no fabricated statutory number'")
+    stmts.append(f"CREATE TABLE {fq}.`6_gov_downstream_handoff` (handoff_id STRING, handoff_version INT, "
+                 f"domain STRING, target STRING, affected_input STRING, input_movement_eur BIGINT, currency STRING, "
+                 f"valuation_date STRING, cohort_map STRING, source_decision_id STRING, source_input_version STRING, "
+                 f"delivery_state STRING, result_state STRING, idempotency_key STRING, note STRING) "
+                 f"COMMENT '{LABEL} versioned, idempotent input hand-off; delivery vs result state kept distinct — no fabricated statutory number'")
     handoffs = [
-        ("CAPITAL", "Solvency II SCR (reserve risk)", "Net technical-provision movement", net_mv,
-         "REQUIRES_RECALCULATION",
+        ("HO-CAP-01", "CAPITAL", "Solvency II SCR (reserve risk)", "Net technical-provision movement", net_mv,
+         "AWAITING_RECALCULATION",
          "Reserve-risk capital recalculates on the revised net technical provisions via the capital model "
          "(diversification, counterparty, own funds). A €1.76m reserve movement is NOT a 1:1 capital charge; "
          "no solvency-ratio delta is asserted here."),
-        ("IFRS17", "Liability for incurred claims (PAA)", "Gross indemnity cash-flow movement", gross_mv,
-         "REQUIRES_RECALCULATION",
+        ("HO-IFRS-01", "IFRS17", "Liability for incurred claims (PAA)", "Gross indemnity cash-flow movement", gross_mv,
+         "AWAITING_RECALCULATION",
          "LIC remeasurement runs the supported PAA model on EIOPA curves with the risk adjustment separate; "
          "accident-year → contract-group mapping to be confirmed before a booked number."),
-        ("IFRS17", "Reinsurance held (ceded)", "Ceded recoverable movement", ceded_mv,
+        ("HO-IFRS-02", "IFRS17", "Reinsurance held (ceded)", "Ceded recoverable movement", ceded_mv,
          "MAPPING_UNRESOLVED",
          "Reinsurance-held measurement is kept separately identifiable; the quota-share cession maps to the "
          "reinsurance-contract group pending confirmation."),
     ]
-    for dom, tgt, inp, mv, st, note in handoffs:
-        stmts.append(f"INSERT INTO {fq}.`6_gov_downstream_handoff` VALUES ('{dom}','{esc(tgt)}','{esc(inp)}',{mv},"
-                     f"'EUR','{meta['valuation_date']}','AY2023 Commercial Motor → cohort','DEC-2026Q2-CM','{st}','{esc(note)}')")
+    for hid, dom, tgt, inp, mv, rstate, note in handoffs:
+        idem = f"{DECISION_ID}|{hid}|{INPUT_VERSION}"
+        stmts.append(f"INSERT INTO {fq}.`6_gov_downstream_handoff` VALUES ('{hid}',1,'{dom}','{esc(tgt)}','{esc(inp)}',"
+                     f"{mv},'EUR','{meta['valuation_date']}','AY2023 Commercial Motor → cohort','{DECISION_ID}',"
+                     f"'{INPUT_VERSION}','DELIVERED','{rstate}','{esc(idem)}','{esc(note)}')")
 
     # ── 7_gov run manifests (the Phase-1 deliverable) ────────────────────────
     stmts.append(f"CREATE TABLE {fq}.`7_gov_run_manifest` (run_id STRING, label STRING, information_cutoff STRING, "
                  f"created_at STRING, manifest_json STRING) COMMENT '{LABEL} retained run manifests for reproduction'")
     for run_id, label, cutoff, v in (("RUN-INITIAL", "Initial", meta["cutoff_initial"], vi),
                                      ("RUN-CORRECTED", "Corrected", meta["cutoff_corrected"], vc)):
-        manifest = build_manifest(run_id, meta, cutoff, v, fin if run_id == "RUN-CORRECTED" else None, bridge)
+        manifest = build_manifest(run_id, meta, cutoff, v, fin if run_id == "RUN-CORRECTED" else None, bridge,
+                                  INPUT_VERSIONS[run_id], ASSUMPTION_HASH)
         stmts.append(f"INSERT INTO {fq}.`7_gov_run_manifest` VALUES ('{run_id}','{label}','{cutoff}','{now}',"
                      f"'{esc(json.dumps(manifest, default=str))}')")
 
@@ -322,6 +401,35 @@ def run(profile, warehouse_id):
                  f"CASE WHEN quality_gate='PASS' THEN 1 ELSE 0 END AS ok, current_timestamp() AS _loaded_at "
                  f"FROM {fq}.`2_valuation_snapshot`")
 
+    # ── Genie-facing position view (spec §2/§3A/§3H) ──────────────────────────
+    # Genie reads THIS view so it can distinguish the previous approved position, the new
+    # information that was under investigation and is now approved, and the outstanding
+    # downstream / finance work. The `position_status` column is what lets Genie answer
+    # "what changed since the previous approved position, and what still needs action?"
+    # without ever presenting a proposal or a downstream dependency as an approved result.
+    stmts.append(f"CREATE OR REPLACE VIEW {fq}.`vw_genie_position` "
+                 f"COMMENT '{LABEL} approved vs proposed vs outstanding — the business Q&A surface for Genie' AS "
+                 f"SELECT 'AY2023 Commercial Motor liability' AS portfolio, 'PREVIOUS_APPROVED' AS position_status, "
+                 f"i.information_cutoff AS as_of, ROUND(ie.gross_outstanding_eur/1e6,2) AS gross_outstanding_m, "
+                 f"ROUND(ie.net_outstanding_eur/1e6,2) AS net_outstanding_m, CAST(NULL AS DOUBLE) AS net_movement_m, "
+                 f"NULL AS decision_id, 'Prior approved reserving position at the initial information cutoff.' AS note "
+                 f"FROM {fq}.`4_reserve_estimate` ie JOIN {fq}.`2_valuation_snapshot` i ON i.snapshot_id='SNAP-INITIAL' "
+                 f"WHERE ie.snapshot_id='SNAP-INITIAL' "
+                 f"UNION ALL "
+                 f"SELECT 'AY2023 Commercial Motor liability', 'APPROVED_CURRENT', c2.information_cutoff, "
+                 f"ROUND(ce.gross_outstanding_eur/1e6,2), ROUND(ce.net_outstanding_eur/1e6,2), "
+                 f"ROUND((ce.net_outstanding_eur - ie2.net_outstanding_eur)/1e6,2), d.decision_id, "
+                 f"'Approved after the €2.0m case correction; net movement shown vs the previous approved position.' "
+                 f"FROM {fq}.`4_reserve_estimate` ce JOIN {fq}.`2_valuation_snapshot` c2 ON c2.snapshot_id='SNAP-CORRECTED' "
+                 f"JOIN {fq}.`4_reserve_estimate` ie2 ON ie2.snapshot_id='SNAP-INITIAL' "
+                 f"LEFT JOIN {fq}.`6_gov_decision` d ON d.status='APPROVED' AND d.run_id='RUN-CORRECTED' "
+                 f"WHERE ce.snapshot_id='SNAP-CORRECTED' "
+                 f"UNION ALL "
+                 f"SELECT 'AY2023 Commercial Motor liability', 'OUTSTANDING_WORK', h.valuation_date, "
+                 f"CAST(NULL AS DOUBLE), CAST(NULL AS DOUBLE), ROUND(h.input_movement_eur/1e6,2), h.source_decision_id, "
+                 f"concat(h.target, ' — ', h.result_state, ' (input delivered, downstream result not yet recalculated)') "
+                 f"FROM {fq}.`6_gov_downstream_handoff` h")
+
     # ── execute ──────────────────────────────────────────────────────────────
     print(f"[deploy] {len(stmts)} statements → {fq} (profile={profile})")
     for n, st in enumerate(stmts, 1):
@@ -335,26 +443,50 @@ def run(profile, warehouse_id):
     os.makedirs("docs", exist_ok=True)
     for run_id, cutoff, v, f in (("RUN-INITIAL", meta["cutoff_initial"], vi, None),
                                  ("RUN-CORRECTED", meta["cutoff_corrected"], vc, fin)):
-        man = build_manifest(run_id, meta, cutoff, v, f, bridge)
+        man = build_manifest(run_id, meta, cutoff, v, f, bridge, INPUT_VERSIONS[run_id], ASSUMPTION_HASH)
         path = f"docs/run_manifest_{run_id.split('-')[1].lower()}.json"
         with open(path, "w") as fh:
             json.dump(man, fh, indent=2, default=str)
         print(f"  wrote {path}")
 
 
-def build_manifest(run_id, meta, cutoff, v, fin, bridge):
+def build_manifest(run_id, meta, cutoff, v, fin, bridge, input_version, assumption_hash):
+    """The retained artifact for deterministic historical reproduction (spec §4).
+
+    Carries the exact inputs (whole EUR), the governed assumptions, the calculation version
+    and the input version. Reproduction re-runs the pinned calc version on THESE retained
+    inputs — not the current tables — and compares ALL material outputs at whole-EUR
+    (underlying) precision. `results_eur` and `finance_eur` are the whole-EUR expectations
+    used for that comparison; the *_millions blocks are for display only.
+    """
+    ins = v["inputs"]
     m = {
         "run_id": run_id, "entity": meta["entity"], "line_of_business": meta["lob_label"],
         "accident_year": 2023, "currency": "EUR", "valuation_date": meta["valuation_date"],
-        "information_cutoff": cutoff, "seed": meta["seed"], "engine_version": "1.0",
+        "information_cutoff": cutoff, "seed": meta["seed"],
+        "calc_version": E.CALC_VERSION, "engine_version": E.CALC_VERSION,
+        "input_version": input_version, "assumption_hash": assumption_hash,
         "basis": "gross, undiscounted indemnity",
+        "retention": ("Retained reproduction artifact: exact inputs + assumptions + calc version. "
+                      "Reproduction re-runs the pinned calc version on these retained inputs and "
+                      "compares all material outputs at whole-EUR precision; a missing manifest or an "
+                      "unsupported calc version fails visibly. A scenario reset archives this manifest "
+                      "to the evidence-archive schema, never deletes it — retain for the reserving "
+                      "evidence period."),
         "assumptions": {"selected_incurred_cdf": meta["selected_incurred_cdf"],
                         "selected_paid_cdf": meta["selected_paid_cdf"],
                         "earned_premium_eur": meta["earned_premium"],
                         "expected_loss_ratio": meta["expected_loss_ratio"],
                         "selection_weights": meta["selection_weights"],
                         "quota_share_pct": meta["quota_share_pct"]},
-        "inputs": {k: str(vv) for k, vv in v["inputs"].items() if k != "weights"},
+        # whole-EUR retained inputs — everything the engine needs to reproduce this run
+        "inputs": {
+            "paid": int(ins["paid"]), "case": int(ins["case"]),
+            "incurred_cdf": str(ins["incurred_cdf"]), "paid_cdf": str(ins["paid_cdf"]),
+            "earned_premium": int(ins["earned_premium"]),
+            "expected_loss_ratio": str(ins["expected_loss_ratio"]),
+            "quota_share_pct": str(ins["quota_share_pct"]),
+            "weights": {k: str(x) for k, x in ins["weights"].items()}},
         "indications_eur_millions": {k: E.to_millions(x) for k, x in v["indications"].items()},
         "results_eur_millions": {
             "selected_ultimate": E.to_millions(v["selected_ultimate"]),
@@ -362,6 +494,13 @@ def build_manifest(run_id, meta, cutoff, v, fin, bridge):
             "gross_ibnr": E.to_millions(v["gross_ibnr"]),
             "ceded_outstanding": E.to_millions(v["ceded_outstanding"]),
             "net_outstanding": E.to_millions(v["net_outstanding"])},
+        # whole-EUR results — the underlying-precision comparison target for reproduction
+        "results_eur": {
+            "selected_ultimate": int(v["selected_ultimate"]),
+            "gross_outstanding": int(v["gross_outstanding"]),
+            "gross_ibnr": int(v["gross_ibnr"]),
+            "ceded_outstanding": int(v["ceded_outstanding"]),
+            "net_outstanding": int(v["net_outstanding"])},
     }
     if fin:
         m["finance_eur_millions"] = {
@@ -371,6 +510,11 @@ def build_manifest(run_id, meta, cutoff, v, fin, bridge):
             "residual_net": E.to_millions(fin["residual_net"]),
             "journal": [{"account": l["account"], "dr": E.to_millions(l["dr"]), "cr": E.to_millions(l["cr"])}
                         for l in fin["journal"]], "balanced": fin["balanced"]}
+        m["finance_eur"] = {
+            "ledger_gross_outstanding": int(fin["ledger_gross_outstanding"]),
+            "residual_gross": int(fin["residual_gross"]),
+            "residual_ceded": int(fin["residual_ceded"]),
+            "residual_net": int(fin["residual_net"])}
         m["bridge_eur_millions"] = {
             "case_correction_posted": {k: E.to_millions(x) for k, x in bridge["case_correction_posted"].items()},
             "additional_ibnr_to_book": {k: E.to_millions(x) for k, x in bridge["additional_ibnr_to_book"].items()},

@@ -9,7 +9,7 @@ import os
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse, JSONResponse
 
-from server import journey, agent, mcp
+from server import journey, agent, mcp, presenter
 
 app = FastAPI(title="Claim to Confidence")
 DIST = os.path.join(os.path.dirname(__file__), "dist")
@@ -78,8 +78,18 @@ def api_committee_report():
 
 
 @app.get("/api/reproduce")
-def api_reproduce():
-    return _safe(journey.reproduce)
+def api_reproduce(run_id: str = Query(None)):
+    return _safe(journey.reproduce, run_id)
+
+
+@app.get("/api/genie")
+def api_genie():
+    return _safe(journey.genie_context)
+
+
+@app.get("/api/preflight")
+def api_preflight():
+    return _safe(journey.preflight)
 
 
 @app.get("/api/selection/recompute")
@@ -108,6 +118,39 @@ def api_agent_trace():
 
 
 app.include_router(mcp.router)
+
+
+# ── presenter utility (spec §6) — authenticated POST mutations, scoped by scenario id ──
+
+@app.post("/api/presenter/introduce-defect")
+def api_pre_introduce(scenario_id: str = Query("SC-BASE"), token: str = Query(None)):
+    return _safe(presenter.introduce_defect, scenario_id, token)
+
+
+@app.post("/api/presenter/correct-defect")
+def api_pre_correct(scenario_id: str = Query("SC-BASE"), token: str = Query(None)):
+    return _safe(presenter.correct_defect, scenario_id, token)
+
+
+@app.post("/api/presenter/create-proposal")
+def api_pre_proposal(scenario_id: str = Query("SC-BASE"), token: str = Query(None)):
+    return _safe(presenter.create_proposal, scenario_id, token)
+
+
+@app.post("/api/presenter/approve")
+def api_pre_approve(scenario_id: str = Query("SC-BASE"), proposal_id: str = Query(None),
+                    reviewer: str = Query(None), token: str = Query(None)):
+    return _safe(presenter.approve, scenario_id, proposal_id, reviewer, token)
+
+
+@app.post("/api/presenter/next-version")
+def api_pre_next(scenario_id: str = Query("SC-BASE"), token: str = Query(None)):
+    return _safe(presenter.create_next_version, scenario_id, token)
+
+
+@app.post("/api/presenter/rehearsal-reset")
+def api_pre_reset(scenario_id: str = Query("SC-BASE"), token: str = Query(None)):
+    return _safe(presenter.rehearsal_reset, scenario_id, token)
 
 
 @app.get("/healthz")

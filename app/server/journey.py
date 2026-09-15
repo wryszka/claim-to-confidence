@@ -41,6 +41,40 @@ def _ledger_position():
                          f"posting_status, extract_version, note FROM {F('6_finance_ledger_position')}")
 
 
+# ── governance identifiers (explicit — never selected by APPROVED LIMIT 1) ─────
+SCENARIO_ID = config.SCENARIO_ID
+DECISION_ID = "DEC-2026Q2-CM"
+PROPOSAL_ID = "PROP-2026Q2-CM-001"
+RUN_ID = "RUN-CORRECTED"
+SUPPORTED_CALC_VERSIONS = {"1.0"}
+
+
+def _scenario_state():
+    return sql.query_one(
+        f"SELECT scenario_id, candidate_input_version, approved_input_version, defect_active, defect_note, "
+        f"calc_version, updated_at, updated_by FROM {F('0_cfg_scenario_state')} WHERE scenario_id = '{SCENARIO_ID}'")
+
+
+def approved_decision():
+    """Select the approved decision by EXPLICIT identifiers (scenario, proposal, run, decision) —
+    never `APPROVED LIMIT 1`, never a fabricated fallback. Returns the row or None. Every screen,
+    report and export resolves the SAME approved artifact through this one function (spec §4)."""
+    return sql.query_one(
+        f"SELECT decision_id, scenario_id, proposal_id, run_id, selection_id, cohort, input_version, "
+        f"calc_version, assumption_hash, selected_ultimate_eur, gross_outstanding_eur, ceded_outstanding_eur, "
+        f"net_outstanding_eur, gross_ibnr_eur, status, preparer, reviewer, decided_at, proposal_hash "
+        f"FROM {F('6_gov_decision')} WHERE scenario_id='{SCENARIO_ID}' AND proposal_id='{PROPOSAL_ID}' "
+        f"AND run_id='{RUN_ID}' AND decision_id='{DECISION_ID}' AND status='APPROVED'")
+
+
+def _proposal(proposal_id=PROPOSAL_ID):
+    return sql.query_one(
+        f"SELECT proposal_id, scenario_id, selection_id, run_id, cohort, input_version, assumption_hash, "
+        f"calc_version, selected_ultimate_eur, gross_outstanding_eur, gross_ibnr_eur, ceded_outstanding_eur, "
+        f"net_outstanding_eur, proposal_hash, status, preparer, created_at FROM {F('6_gov_proposal')} "
+        f"WHERE scenario_id='{SCENARIO_ID}' AND proposal_id='{proposal_id}'")
+
+
 # ── assemble the computed state (both valuations + finance + bridge), live ─────
 
 def _weights(cl_weight=None):
@@ -71,9 +105,11 @@ def compute_state(cl_weight=None):
     fin = E.residual_finance_adjustment(vc["gross_outstanding"], int(lp["ledger_case_eur"]),
                                         int(lp["ledger_existing_ibnr_eur"]), qs)
     bridge = E.movement_bridge(vi, vc, 2_000_000, qs)
+    fingerprint = E.assumption_fingerprint(inc_cdf, paid_cdf, prem, elr, weights, qs)
     return {"snaps": snaps, "factors": fac, "apriori": ap, "treaty": tr, "ledger": lp,
             "vi": vi, "vc": vc, "fin": fin, "bridge": bridge, "weights": weights,
-            "inc_cdf": inc_cdf, "paid_cdf": paid_cdf, "quota_share_pct": qs}
+            "inc_cdf": inc_cdf, "paid_cdf": paid_cdf, "quota_share_pct": qs,
+            "assumption_fingerprint": fingerprint}
 
 
 def _mm(x):
@@ -124,6 +160,20 @@ def readiness():
                            f"FROM {F('1_raw_claim_transaction')} WHERE dedup_status = 'ACCEPTED'")
     checks = sql.query(f"SELECT check_id, source, description, severity, status FROM {F('1_raw_dq_check')} "
                        f"ORDER BY check_id")
+    # The readiness gate is tied to the CANDIDATE input version. If a source defect has been
+    # introduced on the candidate inputs (scenario state), it surfaces here as a failing
+    # critical control — a PASS recorded against the earlier version does NOT authorise the
+    # newer candidate (spec §4 quality gate).
+    ss = _scenario_state() or {}
+    candidate = ss.get("candidate_input_version", "UNKNOWN")
+    approved_iv = ss.get("approved_input_version", "UNKNOWN")
+    defect_active = str(ss.get("defect_active")).lower() == "true"
+    defect_note = ss.get("defect_note") or ""
+    if defect_active:
+        checks = list(checks) + [{"check_id": "DQ-DEFECT", "source": "ONESHIELD_CLAIMS",
+                                  "description": defect_note or "Introduced source defect on the candidate inputs "
+                                  "(e.g. a claim transaction with no stable claim/revision id).",
+                                  "severity": "critical", "status": "FAIL"}]
     critical_failed = [c for c in checks if c["severity"] == "critical" and c["status"] != "PASS"]
     gate = "BLOCKED" if critical_failed else "RELEASED"
     return {
@@ -137,11 +187,14 @@ def readiness():
                        "quality_gate": s["quality_gate"]} for s in snaps.values()],
         "control_totals": {"accepted_transactions": int(counts["txns"]), "claims": int(counts["claims"])},
         "dq_checks": checks,
-        "gate": {"status": gate, "critical_total": len([c for c in checks if c["severity"] == "critical"]),
+        "gate": {"status": gate, "input_version": candidate, "approved_input_version": approved_iv,
+                 "defect_active": defect_active,
+                 "critical_total": len([c for c in checks if c["severity"] == "critical"]),
                  "critical_failed": len(critical_failed),
-                 "note": "The valuation-readiness gate releases calculation only when every critical control passes. "
-                         "If a critical check fails or a required source is missing, the gate BLOCKS release at the "
-                         "backend — no green 'complete' state on partial work."},
+                 "note": "The valuation-readiness gate releases calculation for a candidate input version only when "
+                         "every critical control passes for THAT version. A PASS recorded against an earlier version "
+                         "does not authorise a newer one; a critical failure or missing source BLOCKS create/release/"
+                         "approve at the backend — no green 'complete' on partial work."},
     }
 
 
@@ -150,19 +203,26 @@ def readiness():
 def downstream():
     st = compute_state()
     vi, vc = st["vi"], st["vc"]
-    rows = sql.query(f"SELECT domain, target, affected_input, input_movement_eur, currency, valuation_date, "
-                     f"cohort_map, source_decision_id, status, note FROM {F('6_gov_downstream_handoff')}")
+    rows = sql.query(f"SELECT handoff_id, handoff_version, domain, target, affected_input, input_movement_eur, "
+                     f"currency, valuation_date, cohort_map, source_decision_id, source_input_version, "
+                     f"delivery_state, result_state, idempotency_key, note FROM {F('6_gov_downstream_handoff')} "
+                     f"ORDER BY handoff_id")
     live = {"gross": _mm(vc["gross_outstanding"] - vi["gross_outstanding"]),
             "ceded": _mm(vc["ceded_outstanding"] - vi["ceded_outstanding"]),
             "net": _mm(vc["net_outstanding"] - vi["net_outstanding"])}
-    out = [{"domain": r["domain"], "target": r["target"], "affected_input": r["affected_input"],
+    out = [{"handoff_id": r["handoff_id"], "handoff_version": int(r["handoff_version"]), "domain": r["domain"],
+            "target": r["target"], "affected_input": r["affected_input"],
             "input_movement_m": _mm(int(r["input_movement_eur"])), "currency": r["currency"],
             "valuation_date": r["valuation_date"], "cohort_map": r["cohort_map"],
-            "source_decision_id": r["source_decision_id"], "status": r["status"], "note": r["note"]} for r in rows]
+            "source_decision_id": r["source_decision_id"], "source_input_version": r["source_input_version"],
+            "delivery_state": r["delivery_state"], "result_state": r["result_state"],
+            "idempotency_key": r["idempotency_key"], "note": r["note"]} for r in rows]
     return {"handoffs": out, "live_movement": live,
-            "note": "Downstream domains receive the versioned, reconciled inputs and identify the affected "
-                    "recalculation. No statutory capital or IFRS 17 number is fabricated — status shows "
-                    "'requires recalculation' until the supported model runs and is independently checked."}
+            "lifecycle_legend": ["CALCULATED", "PROPOSED", "APPROVED", "DELIVERED", "ACCEPTED", "AWAITING_RECALCULATION"],
+            "note": "The reserve inputs are Approved and DELIVERED downstream with a versioned, idempotent hand-off id "
+                    "(a retried delivery on the same key is a no-op, not a duplicate). The downstream RESULT is "
+                    "'awaiting recalculation' — no statutory capital or IFRS 17 number is fabricated, and nothing is "
+                    "marked Accepted until the supported model runs and an acknowledgement is returned."}
 
 
 # ── lineage (T13): executive amount → population → method → human decision ─────
@@ -170,8 +230,15 @@ def downstream():
 def lineage():
     st = compute_state()
     vc = st["vc"]
-    dec = sql.query_one(f"SELECT decision_id, proposal_id, status, reviewer, proposal_hash FROM {F('6_gov_decision')} "
-                        f"WHERE status='APPROVED' LIMIT 1") or {}
+    dec = approved_decision()
+    if dec:
+        human = {"ref": dec["decision_id"], "value": dec["status"],
+                 "detail": f"Approved by {dec['reviewer']} (prepared by {dec['preparer']}); "
+                           f"input version {dec['input_version']}, calc {dec['calc_version']}, hash {dec['proposal_hash']}."}
+    else:
+        human = {"ref": "—", "value": "NO APPROVED DECISION",
+                 "detail": "No approved decision exists for this scenario/proposal/run — the executive amount above is "
+                           "an unapproved candidate. Nothing downstream should treat it as approved."}
     inc = st["factors"]["INCURRED"]
     # triangle diagonal (AY2023 current) — ties to the ledger
     tri = sql.query_one(f"SELECT cumulative_eur FROM {F('3_triangle_cell')} WHERE measure='INCURRED' AND accident_year=2023 AND development_lag=3")
@@ -182,9 +249,8 @@ def lineage():
     return {"chain": [
         {"level": "Executive amount", "ref": "Net outstanding movement", "value": f"+€{_mm(vc['net_outstanding'] - st['vi']['net_outstanding'])}m",
          "detail": "The headline the board sees."},
-        {"level": "Human decision", "ref": dec.get("decision_id", "DEC-2026Q2-CM"),
-         "value": dec.get("status", "APPROVED"), "detail": f"Approved by {dec.get('reviewer','chief actuary')}; hash {dec.get('proposal_hash','')}."},
-        {"level": "Selection (judgement)", "ref": dec.get("proposal_id", "SEL-2026Q2-CM-INCURRED"),
+        {"level": "Human decision", "ref": human["ref"], "value": human["value"], "detail": human["detail"]},
+        {"level": "Selection (judgement)", "ref": dec["selection_id"] if dec else "SEL-2026Q2-CM-INCURRED",
          "value": f"incurred CDF {inc['cumulative_development_factor']} · 50/50 CL+BF", "detail": inc["rationale"][:150] + "…"},
         {"level": "Method indications", "ref": "AY2023 corrected", "value": f"CL {_mm(vc['indications']['incurred_chain_ladder'])} · BF {_mm(vc['indications']['incurred_bornhuetter_ferguson'])}",
          "detail": "Computed live from the selected factors and the a-priori basis."},
@@ -202,22 +268,43 @@ def lineage():
 # ── committee report (T18): rendered from the approved run ─────────────────────
 
 def committee_report():
-    st = compute_state()
-    vi, vc, fin, br = st["vi"], st["vc"], st["fin"], st["bridge"]
-    dec = sql.query_one(f"SELECT decision_id, reviewer, proposal_hash FROM {F('6_gov_decision')} WHERE status='APPROVED' LIMIT 1") or {}
+    """Generated ONLY from the approved run's retained artifacts (manifest + decision), never
+    from live defaults or free text. No approved decision → no memo (visible, honest)."""
+    dec = approved_decision()
+    if not dec:
+        return {"available": False, "title": "Reserving Committee memo — unavailable",
+                "reason": "No approved decision for this scenario/proposal/run. The memo is generated only from an "
+                          "approved run's retained artifacts; none exists, so no memo is produced."}
+    mans = {m["run_id"]: m["manifest_json"] for m in
+            sql.query(f"SELECT run_id, manifest_json FROM {F('7_gov_run_manifest')}")}
+    try:
+        corr = json.loads(mans[dec["run_id"]])
+        init = json.loads(mans["RUN-INITIAL"])
+    except Exception:
+        return {"available": False, "title": "Reserving Committee memo — unavailable",
+                "reason": f"Retained run manifest for {dec['run_id']} is missing or unreadable — the memo cannot be "
+                          f"generated from artifacts."}
+    cr, ir, fin = corr["results_eur"], init["results_eur"], corr.get("finance_eur", {})
+    def m(x):
+        return _mm(int(x))
+    lines = [
+        f"Selected ultimate {m(ir['selected_ultimate'])} → {m(cr['selected_ultimate'])} "
+        f"(+{round(m(cr['selected_ultimate'])-m(ir['selected_ultimate']),3)}m).",
+        f"Gross outstanding {m(ir['gross_outstanding'])} → {m(cr['gross_outstanding'])}; net after 20% quota share "
+        f"{m(ir['net_outstanding'])} → {m(cr['net_outstanding'])} (+{round(m(cr['net_outstanding'])-m(ir['net_outstanding']),3)}m).",
+        "Driver: a €2.0m case correction on one major bodily-injury claim, effective 30 Jun, known 6 Jul.",
+        f"Finance: €2.0m already posted; only the €{m(fin.get('residual_gross',0))}m residual IBNR proposed "
+        f"(journal generated, not posted; balanced).",
+        "Downstream: capital and IFRS 17 dependencies identified and delivered for recalculation; no statutory number asserted.",
+    ]
     return {
-        "title": "Reserving Committee memo — AY2023 Commercial Motor liability",
-        "basis": "EUR millions, gross undiscounted indemnity. Synthetic scenario (Bricksurance SE).",
-        "decision_id": dec.get("decision_id", "DEC-2026Q2-CM"), "reviewer": dec.get("reviewer", ""),
-        "proposal_hash": dec.get("proposal_hash", ""),
-        "lines": [
-            f"Selected ultimate revised {_mm(vi['selected_ultimate'])} → {_mm(vc['selected_ultimate'])} (+{_mm(vc['selected_ultimate']-vi['selected_ultimate'])}m).",
-            f"Gross outstanding {_mm(vi['gross_outstanding'])} → {_mm(vc['gross_outstanding'])}; net after 20% quota share {_mm(vi['net_outstanding'])} → {_mm(vc['net_outstanding'])} (+{_mm(vc['net_outstanding']-vi['net_outstanding'])}m).",
-            f"Driver: a €2.0m case correction on one major bodily-injury claim, effective 30 Jun, known 6 Jul.",
-            f"Finance: €2.0m already posted; only the €{_mm(fin['residual_gross'])}m residual IBNR proposed for booking (balanced journal).",
-            f"Downstream: capital and IFRS 17 dependencies identified and flagged for recalculation; no statutory number asserted.",
-        ],
-        "note": "Rendered from the approved run; figures are the booked selection, not free text.",
+        "available": True, "title": "Reserving Committee memo — AY2023 Commercial Motor liability",
+        "basis": "EUR millions, gross undiscounted indemnity. Synthetic scenario (Bricksurance SE). "
+                 "Rendered from the approved run's retained manifest.",
+        "decision_id": dec["decision_id"], "run_id": dec["run_id"], "input_version": dec["input_version"],
+        "calc_version": dec["calc_version"], "reviewer": dec["reviewer"], "preparer": dec["preparer"],
+        "proposal_hash": dec["proposal_hash"], "lines": lines,
+        "note": "Figures read from the approved run's retained artifacts (manifest + decision), not free text or live defaults.",
     }
 
 
@@ -345,9 +432,12 @@ def finance():
         "residual": {"gross": _mm(fin["residual_gross"]), "ceded": _mm(fin["residual_ceded"]), "net": _mm(fin["residual_net"])},
         "journal": [{"account": l["account"], "dr": _mm(l["dr"]), "cr": _mm(l["cr"])} for l in fin["journal"]],
         "balanced": fin["balanced"], "total_dr": _mm(fin["journal_total_dr"]), "total_cr": _mm(fin["journal_total_cr"]),
-        "double_count_prevented": True,
-        "note": "The €2.0m case correction is already on the ledger. Finance books only the €0.2m residual IBNR "
-                "(and its €0.04m ceded), never the full movement twice.",
+        "journal_state": "GENERATED_NOT_POSTED",
+        "double_count_avoided": True,
+        "note": "The €2.0m case correction is already on the ledger, so finance GENERATES (does not post) a residual "
+                "journal of only €0.2m gross (and €0.04m ceded) — the already-booked amount is excluded, so the "
+                "movement is never counted twice. The journal is a proposal; it is not marked posted. Idempotent "
+                "re-delivery of the source correction is prevented upstream on (claim_id, revision_id).",
     }
 
 
@@ -355,31 +445,68 @@ def finance():
 
 def review():
     st = compute_state()
-    vc = st["vc"]
-    fac = st["factors"]
-    dec = sql.query_one(f"SELECT decision_id, proposal_id, cohort, selected_ultimate_eur, gross_outstanding_eur, "
-                        f"net_outstanding_eur, status, preparer, reviewer, proposal_hash FROM {F('6_gov_decision')} "
-                        f"WHERE status = 'APPROVED' LIMIT 1") or {}
+    dec = approved_decision()
+    prop = _proposal()
+    ss = _scenario_state() or {}
+    live_fp = st["assumption_fingerprint"]
+    candidate_iv = ss.get("candidate_input_version", "UNKNOWN")
+
+    proposal_block = None
+    if prop:
+        # A proposal is STALE if the inputs or assumptions have moved since it was created —
+        # its bound input version / assumption fingerprint no longer match the live scenario.
+        stale = not (prop["input_version"] == candidate_iv and prop["assumption_hash"] == live_fp)
+        proposal_block = {
+            "proposal_id": prop["proposal_id"], "selection_id": prop["selection_id"], "run_id": prop["run_id"],
+            "cohort": prop["cohort"], "input_version": prop["input_version"], "assumption_hash": prop["assumption_hash"],
+            "calc_version": prop["calc_version"], "status": prop["status"], "preparer": prop["preparer"],
+            "selected_ultimate": _mm(int(prop["selected_ultimate_eur"])),
+            "gross_outstanding": _mm(int(prop["gross_outstanding_eur"])),
+            "net_outstanding": _mm(int(prop["net_outstanding_eur"])), "proposal_hash": prop["proposal_hash"],
+            "stale": bool(stale), "live_input_version": candidate_iv, "live_assumption_hash": live_fp,
+            "binding_note": "Bound to its exact input version, assumption fingerprint and calc version. If inputs or "
+                            "assumptions change after it is created, the proposal is detected as stale and cannot be "
+                            "approved — a fresh proposal must be created against the new version.",
+        }
+
+    approval_block = None
+    if dec:
+        approval_block = {"decision_id": dec["decision_id"], "status": dec["status"], "reviewer": dec["reviewer"],
+                          "preparer": dec["preparer"], "input_version": dec["input_version"],
+                          "calc_version": dec["calc_version"], "decided_at": dec["decided_at"],
+                          "selected_ultimate": _mm(int(dec["selected_ultimate_eur"])),
+                          "gross_outstanding": _mm(int(dec["gross_outstanding_eur"])),
+                          "net_outstanding": _mm(int(dec["net_outstanding_eur"])),
+                          "separation_of_duties": dec["preparer"] != dec["reviewer"]}
+
     return {
-        "proposal": {"selection_id": dec.get("proposal_id", "SEL-2026Q2-CM-INCURRED"),
-                     "cohort": dec.get("cohort", "AY2023 Commercial Motor"),
-                     "selected_ultimate": _mm(int(dec["selected_ultimate_eur"])) if dec.get("selected_ultimate_eur") else _mm(vc["selected_ultimate"]),
-                     "gross_outstanding": _mm(int(dec["gross_outstanding_eur"])) if dec.get("gross_outstanding_eur") else _mm(vc["gross_outstanding"]),
-                     "net_outstanding": _mm(int(dec["net_outstanding_eur"])) if dec.get("net_outstanding_eur") else _mm(vc["net_outstanding"]),
-                     "status": dec.get("status", "APPROVED"), "preparer": dec.get("preparer", fac["INCURRED"]["selected_by"]),
-                     "reviewer": dec.get("reviewer", fac["INCURRED"]["approved_by"]),
-                     "proposal_hash": dec.get("proposal_hash", "")},
+        "approval_status": (dec["status"] if dec else "NOT_APPROVED"),
+        "proposal": proposal_block,
+        "approval": approval_block,
         "authority": [
-            {"actor": "Reserving analyst", "may": "Investigate, run approved methods, draft selections",
-             "may_not": "Approve their own material proposal"},
-            {"actor": "Chief actuary / reviewer", "may": "Review and approve or reject the specific proposal",
-             "may_not": "Silently rewrite a published historic version"},
-            {"actor": "Agent identity", "may": "Read authorised evidence, invoke approved calculations, create proposals",
+            {"actor": "Reserving analyst (preparer)", "may": "Investigate, run approved methods, create a proposal",
+             "may_not": "Approve their own proposal"},
+            {"actor": "Chief actuary (reviewer)", "may": "Review and approve or reject a specific, current proposal",
+             "may_not": "Approve a stale proposal, or silently rewrite a published historic version"},
+            {"actor": "Agent / app identity", "may": "Read authorised evidence, invoke approved calculations",
              "may_not": "Correct source, change permissions, relax a gate, approve a reserve, or publish"},
         ],
-        "negative_test": {"scenario": "An agent identity attempts to approve the reserve and export another portfolio",
-                          "result": "DENIED by the enforcement layer",
-                          "note": "First cut uses the labelled role harness; separately-authenticated principals are a later phase."},
+        "separation_of_duties": {
+            "rule": "The preparer of a proposal may not approve it; approval requires a different, authorised reviewer.",
+            "enforced_backend": True, "app_identity_can_approve": False,
+            "note": "The app/agent service principal has no MODIFY grant on the approvals table, so it cannot write an "
+                    "approval at all — Unity Catalog denies it (see the negative test on Screen G). The seeded approval "
+                    "was written by the authorised reviewer role at deploy. Approving a NEW proposal live through the app "
+                    "requires a separately-authenticated reviewer principal (a role-scoped login / account group) — the "
+                    "documented prerequisite for the live approve step. A persona dropdown is NOT authentication.",
+        },
+        "negative_test": {
+            "scenario": "The agent/app identity attempts to write a reserve approval",
+            "result": "DENIED at the data tier by Unity Catalog (no MODIFY on the approvals table)",
+            "detail": "The attempt is real and its outcome is classified (confirmed denial vs control failure vs "
+                      "inconclusive infrastructure error) — see Screen G. It writes to an isolated probe target, never "
+                      "to the business approvals table.",
+        },
     }
 
 
@@ -403,22 +530,63 @@ def evidence():
                               "inputs and compares to the stored completed run — numerically, no AI prose required."}
 
 
-def reproduce():
-    """Deterministic re-run from retained inputs, compared to the persisted completed run.
-    Proves both numerical versions reproduce (acceptance test T12)."""
-    st = compute_state()
-    stored = sql.query(f"SELECT snapshot_id, selected_ultimate_eur, gross_outstanding_eur, net_outstanding_eur "
-                       f"FROM {F('4_reserve_estimate')}")
-    stored_map = {r["snapshot_id"]: r for r in stored}
-    out = []
-    for snap_id, v in (("SNAP-INITIAL", st["vi"]), ("SNAP-CORRECTED", st["vc"])):
-        s = stored_map.get(snap_id, {})
-        recomputed = _mm(v["selected_ultimate"])
-        stored_val = _mm(int(s["selected_ultimate_eur"])) if s.get("selected_ultimate_eur") is not None else None
-        out.append({"snapshot": snap_id, "recomputed_selected_ultimate": recomputed,
-                    "stored_selected_ultimate": stored_val,
-                    "match": (stored_val is not None and abs(recomputed - stored_val) < 0.01)})
-    return {"comparisons": out, "all_match": all(c["match"] for c in out)}
+def reproduce(run_id=None):
+    """Historical reproduction from RETAINED ARTIFACTS (spec §4). For each retained run manifest,
+    re-run the pinned calculation version on the manifest's retained inputs — NOT the current
+    tables and NOT current defaults — and compare ALL material outputs (ultimate, gross/ceded/net
+    outstanding, IBNR, and the finance residuals) at whole-EUR (underlying) precision. A missing
+    manifest, an unsupported calc version, or any single mismatch is an explicit, visible failure."""
+    manifests = sql.query(f"SELECT run_id, label, manifest_json FROM {F('7_gov_run_manifest')} ORDER BY run_id")
+    if run_id:
+        manifests = [m for m in manifests if m["run_id"] == run_id]
+    if not manifests:
+        return {"reproducible": False, "error": "No retained run manifest found — reproduction cannot proceed "
+                "(table history alone is not a substitute for the retained artifact).", "runs": []}
+    runs = []
+    for m in manifests:
+        rec = {"run_id": m["run_id"], "label": m["label"]}
+        try:
+            man = json.loads(m["manifest_json"])
+        except Exception as e:
+            rec.update({"status": "FAILED", "reason": f"manifest unreadable: {e}", "comparisons": []})
+            runs.append(rec); continue
+        cv = man.get("calc_version")
+        if cv not in SUPPORTED_CALC_VERSIONS:
+            rec.update({"status": "FAILED", "reason": f"unsupported calc version {cv!r}; cannot execute this run",
+                        "comparisons": []})
+            runs.append(rec); continue
+        ins, exp = man.get("inputs"), man.get("results_eur")
+        if not ins or not exp:
+            rec.update({"status": "FAILED", "reason": "retained inputs or results missing from the manifest",
+                        "comparisons": []})
+            runs.append(rec); continue
+        qs = Decimal(ins["quota_share_pct"])
+        weights = {k: Decimal(v) for k, v in ins["weights"].items()}
+        v = E.value_cohort(int(ins["paid"]), int(ins["case"]), Decimal(ins["incurred_cdf"]), Decimal(ins["paid_cdf"]),
+                           int(ins["earned_premium"]), Decimal(ins["expected_loss_ratio"]), weights, qs)
+        comps = []
+        for f in ("selected_ultimate", "gross_outstanding", "gross_ibnr", "ceded_outstanding", "net_outstanding"):
+            recomputed, expected = int(v[f]), int(exp[f])
+            comps.append({"field": f, "recomputed_eur": recomputed, "retained_eur": expected,
+                          "match": recomputed == expected})
+        fin_man = man.get("finance_eur")
+        if fin_man:
+            lg = int(fin_man["ledger_gross_outstanding"])
+            rg = int(v["gross_outstanding"]) - lg
+            rc = int(E.cents(Decimal(rg) * qs))
+            rn = rg - rc
+            for f, val in (("finance.residual_gross", rg), ("finance.residual_ceded", rc), ("finance.residual_net", rn)):
+                expected = int(fin_man[f.split(".")[1]])
+                comps.append({"field": f, "recomputed_eur": val, "retained_eur": expected, "match": val == expected})
+        all_ok = all(c["match"] for c in comps)
+        rec.update({"status": "MATCH" if all_ok else "MISMATCH", "calc_version": cv,
+                    "input_version": man.get("input_version"), "comparisons": comps})
+        runs.append(rec)
+    return {"reproducible": all(r["status"] == "MATCH" for r in runs), "runs": runs,
+            "precision": "whole EUR (underlying, before display rounding)",
+            "note": "Each run is re-executed from its retained manifest inputs at the pinned calc version and "
+                    "compared to the manifest's retained whole-EUR results — independent of the current tables. "
+                    "A mismatch or a missing/unsupported artifact fails visibly."}
 
 
 def meta():
@@ -426,4 +594,123 @@ def meta():
     return {"entity": config.ENTITY, "line_of_business": "Commercial Motor liability", "accident_year": 2023,
             "currency": "EUR", "valuation_date": "2026-06-30",
             "cutoff_initial": "2026-07-03", "cutoff_corrected": "2026-07-06",
-            "treaty": tr, "hub_url": config.HUB_APP_URL}
+            "scenario_id": SCENARIO_ID, "treaty": tr, "hub_url": config.HUB_APP_URL,
+            "genie": {"configured": bool(config.GENIE_SPACE_ID), "space_id": config.GENIE_SPACE_ID}}
+
+
+# ── Genie business-question entry point (spec §2 / §3A / §3H) ──────────────────
+
+def genie_context():
+    configured = bool(config.GENIE_SPACE_ID)
+    url = ""
+    if configured and config.WORKSPACE_HOST:
+        host = config.WORKSPACE_HOST.rstrip("/")
+        if not host.startswith("http"):
+            host = "https://" + host
+        url = f"{host}/genie/rooms/{config.GENIE_SPACE_ID}"
+    st = compute_state()
+    vi, vc = st["vi"], st["vc"]
+    dec = approved_decision()
+    return {
+        "configured": configured, "space_id": config.GENIE_SPACE_ID, "url": url,
+        "entry_question": "What changed since the previous approved position, and what needs attention?",
+        "followup_question": "What is approved now, what changed, and what still needs action?",
+        "states": [
+            {"status": "PREVIOUS_APPROVED", "label": "Previous approved position",
+             "gross_m": _mm(vi["gross_outstanding"]), "net_m": _mm(vi["net_outstanding"]),
+             "detail": "Prior approved reserving position at the initial information cutoff (3 Jul)."},
+            {"status": "APPROVED_CURRENT", "label": "New information — investigated, now approved" if dec else
+             "New information — under investigation (not yet approved)",
+             "gross_m": _mm(vc["gross_outstanding"]), "net_m": _mm(vc["net_outstanding"]),
+             "net_movement_m": _mm(vc["net_outstanding"] - vi["net_outstanding"]),
+             "decision_id": dec["decision_id"] if dec else None,
+             "detail": "Corrected position after the €2.0m case correction (known 6 Jul)."},
+            {"status": "OUTSTANDING_WORK", "label": "Outstanding",
+             "detail": "Residual finance journal proposed (not posted) and capital / IFRS 17 awaiting recalculation."},
+        ],
+        "reads_view": f"{config.CATALOG}.{config.SCHEMA}.vw_genie_position",
+        "note": "Genie answers over the governed view vw_genie_position, whose position_status column keeps approved "
+                "results distinct from proposals and downstream dependencies. When the space is not configured this "
+                "entry point shows a documented setup path (tools/genie_space.py) rather than relabelling the grounded "
+                "agent as Genie.",
+    }
+
+
+# ── preflight (spec §6) — each dependency checked independently, actionable failures ──
+
+def preflight():
+    checks = []
+
+    def add(name, ok, detail):
+        checks.append({"check": name, "status": "PASS" if ok else "FAIL", "detail": detail})
+
+    try:
+        sql.query("SELECT 1 AS ok")
+        add("sql_warehouse", True, f"Warehouse {config.WAREHOUSE_ID} responded to SELECT 1.")
+    except Exception as e:
+        add("sql_warehouse", False, f"SELECT 1 failed: {str(e)[:160]}. Check the warehouse is running and the "
+            f"app service principal has CAN_USE.")
+
+    required = ["0_cfg_scenario_state", "1_raw_claim_transaction", "1_raw_dq_check", "2_valuation_snapshot",
+                "3_triangle_cell", "4_selected_development_pattern", "4_reserve_apriori", "4_reserve_estimate",
+                "5_reinsurance_treaty", "6_finance_ledger_position", "6_gov_proposal", "6_gov_decision",
+                "6_gov_downstream_handoff", "7_gov_audit_event", "7_gov_run_manifest", "7_gov_ai_trace",
+                "7_gov_permission_probe"]
+    missing = []
+    for t in required:
+        try:
+            sql.query(f"SELECT 1 FROM {F(t)} LIMIT 1")
+        except Exception:
+            missing.append(t)
+    add("required_tables", not missing, "All required tables present."
+        if not missing else f"Missing/unreadable: {missing}. Re-run tools/deploy_databricks.py.")
+
+    dec = None
+    try:
+        dec = approved_decision()
+    except Exception:
+        pass
+    add("approved_decision", bool(dec), "Approved decision resolves by explicit ids."
+        if dec else "No approved decision resolvable by explicit ids — reports/exports will show NOT_APPROVED.")
+
+    try:
+        rep = reproduce()
+        add("reproduction", rep.get("reproducible") is True,
+            "Both retained runs reproduce to whole-EUR precision."
+            if rep.get("reproducible") else "Reproduction did not fully match — inspect /api/reproduce.")
+    except Exception as e:
+        add("reproduction", False, f"Reproduction check errored: {str(e)[:160]}")
+
+    try:
+        ep = config.get_workspace_client().serving_endpoints.get(config.FM_ENDPOINT)
+        add("model_endpoint", True, f"Serving endpoint {config.FM_ENDPOINT} reachable "
+            f"(state {getattr(getattr(ep, 'state', None), 'ready', 'unknown')}).")
+    except Exception as e:
+        add("model_endpoint", False, f"Cannot reach model endpoint {config.FM_ENDPOINT}: {str(e)[:160]}. "
+            f"The agent screen will show an honest outage; the financial path is unaffected.")
+
+    try:
+        from . import agent as _agent
+        persisted, cid, terr = _agent._trace("preflight", question="preflight probe", policy_outcome="probe")
+        add("ai_tracing", persisted, f"AI trace table is writable (correlation {cid})."
+            if persisted else f"AI trace not writable: {terr}. The agent screen surfaces this; evidence is incomplete "
+            f"until the app SP has MODIFY on 7_gov_ai_trace.")
+    except Exception as e:
+        add("ai_tracing", False, f"Tracing probe errored: {str(e)[:160]}")
+
+    add("genie", bool(config.GENIE_SPACE_ID), f"Genie space configured ({config.GENIE_SPACE_ID})."
+        if config.GENIE_SPACE_ID else "Genie space not configured (GENIE_SPACE_ID empty). The business-question entry "
+        "point shows a documented setup path; create the space with tools/genie_space.py. Optional — the native-link "
+        "fallback still presents the three governed positions.")
+
+    add("identity_authority", True, "Authority invariant: the app service principal has SELECT but NOT MODIFY on the "
+        "approvals table. The live negative test (Screen G) attempts a write to an isolated probe and confirms + "
+        "classifies the denial — run it to validate enforcement live.")
+
+    # genie is optional; identity_authority is an invariant validated by the live negative test
+    required_ok = all(c["status"] == "PASS" for c in checks if c["check"] not in ("genie",))
+    return {"checks": checks, "passed": sum(1 for c in checks if c["status"] == "PASS"), "total": len(checks),
+            "ready": required_ok,
+            "note": "Each dependency is checked independently — a healthy web server alone is not a successful "
+                    "preflight. Genie is optional (native-link fallback); every other item must pass to run the "
+                    "full sequence against this scenario."}
