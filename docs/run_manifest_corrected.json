@@ -7,8 +7,12 @@
   "valuation_date": "2026-06-30",
   "information_cutoff": "2026-07-06",
   "seed": 20260630,
+  "calc_version": "1.0",
   "engine_version": "1.0",
+  "input_version": "IV-2026-07-06-CORR-01",
+  "assumption_hash": "c608faf568dfdeef",
   "basis": "gross, undiscounted indemnity",
+  "retention": "Retained reproduction artifact: exact inputs + assumptions + calc version. Reproduction re-runs the pinned calc version on these retained inputs and compares all material outputs at whole-EUR precision; a missing manifest or an unsupported calc version fails visibly. A scenario reset archives this manifest to the evidence-archive schema, never deletes it \u2014 retain for the reserving evidence period.",
   "assumptions": {
     "selected_incurred_cdf": "1.20",
     "selected_paid_cdf": "1.70",
@@ -21,13 +25,17 @@
     "quota_share_pct": "0.20"
   },
   "inputs": {
-    "paid": "58000000.00",
-    "case": "25000000.00",
+    "paid": 58000000,
+    "case": 25000000,
     "incurred_cdf": "1.20",
     "paid_cdf": "1.70",
-    "earned_premium": "120000000.00",
+    "earned_premium": 120000000,
     "expected_loss_ratio": "0.80",
-    "quota_share_pct": "0.20"
+    "quota_share_pct": "0.20",
+    "weights": {
+      "incurred_chain_ladder": "0.5",
+      "incurred_bornhuetter_ferguson": "0.5"
+    }
   },
   "indications_eur_millions": {
     "reported_incurred": 83.0,
@@ -42,6 +50,13 @@
     "gross_ibnr": 16.3,
     "ceded_outstanding": 8.26,
     "net_outstanding": 33.04
+  },
+  "results_eur": {
+    "selected_ultimate": 99300000,
+    "gross_outstanding": 41300000,
+    "gross_ibnr": 16300000,
+    "ceded_outstanding": 8260000,
+    "net_outstanding": 33040000
   },
   "finance_eur_millions": {
     "ledger_gross_outstanding": 41.1,
@@ -71,6 +86,12 @@
       }
     ],
     "balanced": true
+  },
+  "finance_eur": {
+    "ledger_gross_outstanding": 41100000,
+    "residual_gross": 200000,
+    "residual_ceded": 40000,
+    "residual_net": 160000
   },
   "bridge_eur_millions": {
     "case_correction_posted": {

@@ -19,7 +19,7 @@ env:
   # Genie space id (spec §3A/§3H). Empty until the space is created with tools/genie_space.py;
   # the Discover screen then shows a documented setup path instead of a native link.
   - name: GENIE_SPACE_ID
-    value: ""
+    value: "01f1b0f57ec01b5885ad6f7cf2cd75a4"
   # Presenter-utility token (spec §6). Change from the default before any shared run; the
   # POST mutation endpoints require it, keeping them off the audience path.
   - name: PRESENTER_TOKEN

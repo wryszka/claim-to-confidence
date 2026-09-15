@@ -1,0 +1,20 @@
+{
+  "display_name": "Bricksurance \u2014 Reserving position (Claim to Confidence)",
+  "description": "Business Q&A over the governed AY2023 Commercial Motor reserving position. Distinguishes the previous approved position, the new information (now approved) and the outstanding downstream / finance work.",
+  "warehouse_id": "a3b61648ea4809e3",
+  "table_identifiers": [
+    "lr_dev_aws_us_catalog.claim_to_confidence.vw_genie_position",
+    "lr_dev_aws_us_catalog.claim_to_confidence.vw_group_headline",
+    "lr_dev_aws_us_catalog.claim_to_confidence.6_gov_downstream_handoff",
+    "lr_dev_aws_us_catalog.claim_to_confidence.6_gov_decision",
+    "lr_dev_aws_us_catalog.claim_to_confidence.2_valuation_snapshot"
+  ],
+  "sample_questions": [
+    "What changed since the previous approved position, and what needs attention?",
+    "What is approved now, what changed, and what still needs action?",
+    "What is the net outstanding movement for AY2023 Commercial Motor?",
+    "Which downstream domains are awaiting recalculation?",
+    "Show the previous approved position versus the current approved position."
+  ],
+  "instructions": "This space answers about ONE cohort: AY2023 Commercial Motor liability for Bricksurance SE (a fictional insurer; all data synthetic), in EUR millions, gross undiscounted. ALWAYS read vw_genie_position and respect its position_status column: PREVIOUS_APPROVED is the prior approved position, APPROVED_CURRENT is the current approved position after the \u20ac2.0m case correction, and OUTSTANDING_WORK is downstream / finance work that is NOT yet complete. NEVER present a proposal or an OUTSTANDING_WORK row as an approved result. When asked what changed, compare APPROVED_CURRENT to PREVIOUS_APPROVED and report the net movement. Do not invent statutory capital or IFRS 17 numbers \u2014 downstream results are 'awaiting recalculation'."
+}
