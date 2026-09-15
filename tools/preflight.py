@@ -11,24 +11,44 @@ non-zero if the required set is not ready. A healthy web server alone is NOT a p
 """
 import argparse
 import json
+import subprocess
 import sys
 import urllib.request
 
 DEFAULT_URL = "https://claim-to-confidence-7474656169654171.aws.databricksapps.com"
 
 
+def _token(profile):
+    """Fetch an OAuth token from the Databricks CLI so this actually authenticates to the App."""
+    try:
+        out = subprocess.run(["databricks", "auth", "token", "--profile", profile],
+                             capture_output=True, text=True, timeout=60)
+        if out.returncode == 0:
+            return json.loads(out.stdout).get("access_token")
+    except Exception:
+        pass
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--url", default=DEFAULT_URL)
+    ap.add_argument("--profile", default="DEV")
     a = ap.parse_args()
     endpoint = a.url.rstrip("/") + "/api/preflight"
+    tok = _token(a.profile)
+    if not tok:
+        print(f"[preflight] no auth token from profile '{a.profile}'. Run `databricks auth login --profile "
+              f"{a.profile}` first, or open {endpoint} in a browser tab where you are already signed in.")
+        return 2
+    req = urllib.request.Request(endpoint, headers={"Authorization": "Bearer " + tok})
     try:
-        with urllib.request.urlopen(endpoint, timeout=90) as r:
+        with urllib.request.urlopen(req, timeout=90) as r:
             data = json.load(r)
     except Exception as e:
         print(f"[preflight] could not reach {endpoint}: {e}")
-        print("[preflight] NOTE: a Databricks App requires an authenticated session; run this against a "
-              "reachable app, or open /api/preflight in an authenticated browser tab.")
+        print(f"[preflight] NOTE: check the app is running and you have access; or open {endpoint} in an "
+              f"authenticated browser tab.")
         return 2
     checks = data.get("checks", [])
     for c in checks:

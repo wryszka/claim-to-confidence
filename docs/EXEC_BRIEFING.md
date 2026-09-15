@@ -6,12 +6,15 @@ everything that decision touches: the money the insurer sets aside, its reinsura
 accounts, and its capital.
 
 ### Why now
-A widely-shared demonstration shows an AI assistant fixing formula errors in a reserving
-spreadsheet and drafting the regulatory letter. It is impressive, and it answers a narrow
-question: *can a model help fix and describe one spreadsheet?* We answer the bigger one:
-*when a claim changes, can you trust the number that comes out the other end — after
-reinsurance, after the accounting, after the capital impact — and can you prove how you got
-there?* A spreadsheet cannot. A connected, governed platform can.
+A recent demonstration showed how a frontier AI model — Claude — can fix spreadsheet formulas
+and draft a regulatory letter. It's genuinely powerful, and it answers an important question:
+*can a model help an actuary do the task?* This demo **extends that story**: *when a claim
+changes, can you trust the number that comes out the other end — after reinsurance, after the
+accounting, after the capital impact — and can you prove how you got there, months later?* A
+model excels at the task; a governed platform operationalises the whole decision. **Together,
+they're what the business needs** — and in this demo they're together: Claude runs (via
+Databricks' Foundation Model API) as a first-class agent *inside* the governed decision loop,
+not as a standalone tool. That's where the two strengths meet.
 
 ### What a "reserve" is (the one piece of jargon)
 An insurer's best estimate of money it still expects to pay for claims that have already

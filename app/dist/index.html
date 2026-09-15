@@ -196,9 +196,12 @@ function presenter(inner){return `<details class="presenter"><summary>🎛️ Pr
   <span class="flat" style="font-size:12px">POST endpoints, scoped by scenario id; never touch shared data or evidence.</span></div>${inner}
   <div id="pout" style="margin-top:10px"></div></div></details>`;}
 function bindPtok(){const t=$("#ptok");if(t)t.oninput=()=>{PTOKEN=t.value;};}
+let LAST_PROPOSAL="";
 function pmsg(o){const box=$("#pout");if(!box)return;
   const cls=o.ok?"good":(o.refused==="CONFIRMED_DENIAL"||o.refused==="REQUIRES_REVIEWER_PRINCIPAL"?"good":(o.error&&!o.refused?"danger":"amber"));
-  box.innerHTML=`<div class="callout ${cls}"><div class="ic">${o.ok?'✅':'ℹ️'}</div><div><b>${o.refused||(o.ok?'OK':'result')}</b> — ${esc(o.note||o.error||JSON.stringify(o))}</div></div>`;}
+  let pid="";
+  if(o.proposal_id){LAST_PROPOSAL=o.proposal_id;pid=`<div style="margin-top:8px">Proposal created: <b class="mono">${o.proposal_id}</b> — already filled in on the <b>Approval</b> screen for you.</div>`;}
+  box.innerHTML=`<div class="callout ${cls}"><div class="ic">${o.ok?'✅':'ℹ️'}</div><div><b>${o.refused||(o.ok?'OK':'result')}</b> — ${esc(o.note||o.error||JSON.stringify(o))}${pid}</div></div>`;}
 const DISCLAIMER=`<div class="disclaimer"><b>About this demo.</b> Bricksurance SE is a fictional insurer and all data is synthetic. Figures are computed live on Databricks from a governed data model; they are not a real regulatory result and assert no compliance certification.</div>`;
 
 async function go(id){
@@ -391,7 +394,7 @@ const RENDER={
         <table><thead><tr><th>Actor</th><th>May</th><th>May not</th></tr></thead><tbody>${auth}</tbody></table></div>
       <div class="callout amber"><div class="ic">🚫</div><div><b>Negative test — ${rv.negative_test.scenario}.</b> Result: <b>${rv.negative_test.result}</b>. ${rv.negative_test.detail} <span class="flat">(run it live on the Investigate screen.)</span></div></div>
       ${presenter(`<div class="desc" style="color:#9fb2d6">Approval enforcement (§3E / §4): try to self-approve (refused), approve as a distinct reviewer (passes pre-conditions, then real UC denial), and make a fresh proposal stale.</div>
-        <input type="text" id="pPid" placeholder="proposal_id (e.g. from Judgement)" style="min-width:260px;margin:3px"/>
+        <input type="text" id="pPid" value="${LAST_PROPOSAL}" placeholder="proposal_id (auto-filled from Judgement)" style="min-width:260px;margin:3px"/>
         <button class="btn dark" id="pSelf" style="margin:3px">Self-approve (preparer)</button>
         <button class="btn dark" id="pRev" style="margin:3px">Approve as chief actuary</button>
         <button class="btn dark" id="pNext" style="margin:3px">Advance version (make stale)</button>`)}
