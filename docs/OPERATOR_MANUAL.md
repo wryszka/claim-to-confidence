@@ -93,6 +93,11 @@ Every screen has the same furniture, so once you know it, you know all nine:
 
 The presenter password is set by whoever deployed the app; the default word is **`present`**.
 
+The **🎛️ Presenter controls** panel looks like this (bottom of screen D, expanded) — the dark bar
+with the token box and the buttons:
+
+![Presenter controls panel — the dark bar at the bottom of screens D, E, F, H](screens/D_presenter_controls.png)
+
 ---
 
 ## 4. Before you start (once, ~10 minutes before)
@@ -122,6 +127,8 @@ For each screen: **where you are · exactly what to click · ✅ how you know it
 say.** The numbers below are the real, verified figures.
 
 ### A — Discover (start here)
+
+![A_discover](screens/A_discover.png)
 - **Click:** left sidebar **A · Discover (Genie)**.
 - **✅ Worked when:** you see the question *"What changed since the previous approved position…"*
   and **three cards** — *Previous approved*, *New (now approved)* showing **+€1.76m net**, and
@@ -133,6 +140,8 @@ say.** The numbers below are the real, verified figures.
   work."*
 
 ### B — The decision (the "wow")
+
+![B_decision](screens/B_decision.png)
 - **Click:** **B · The decision**.
 - **✅ Worked when:** three big numbers animate to **+€2.0m**, **+€2.2m**, **+€1.76m** (about 6
   seconds), and a **green banner** reads *"€2.0m already booked, only €0.2m to post."*
@@ -140,6 +149,8 @@ say.** The numbers below are the real, verified figures.
   reserve, reinsurance and finance — and the platform stops us counting the €2m twice."*
 
 ### C — Investigate (Claude, the AI assistant)
+
+![C_investigate](screens/C_investigate.png)
 - **Click:** **C · Investigate (agent)**. In the *"Ask the agent"* card, click one of the grey
   **suggested-question chips** at the top, e.g. *"Why is the proposed finance adjustment smaller
   than the reserve movement?"*
@@ -154,6 +165,8 @@ say.** The numbers below are the real, verified figures.
   model safely."*
 
 ### D — Data quality (the gate)
+
+![D_dataquality](screens/D_dataquality.png)
 - **Click:** **D · Data quality**. Near the top you'll see a coloured banner: the **gate**, green
   **RELEASED**.
 - **Presenter step:** scroll to the **bottom**, open the dark **🎛️ Presenter controls** bar, type
@@ -164,6 +177,8 @@ say.** The numbers below are the real, verified figures.
   calculation in the backend — and an old 'pass' does not count for the new data."*
 
 ### E — Judgement (the actuary's bench)
+
+![E_judgement](screens/E_judgement.png)
 - **Click:** **E · Judgement**. Find the slider labelled **BF ↔ CL** and drag it — the ultimate
   number updates live.
 - **Presenter step:** open **🎛️ Presenter controls** at the bottom, click **"Create proposal
@@ -174,6 +189,8 @@ say.** The numbers below are the real, verified figures.
   they don't approve."*
 
 ### F — Approval (who's allowed to sign off)
+
+![F_approval](screens/F_approval.png)
 - **Click:** **F · Approval**. You'll see the proposal, the approved decision, and an authority
   table.
 - **Presenter step:** open **🎛️ Presenter controls** — the `proposal_id` from screen E is already
@@ -186,6 +203,8 @@ say.** The numbers below are the real, verified figures.
   can't approve their own; and the app has no right to write an approval at all."*
 
 ### G — Downstream (the knock-on effects)
+
+![G_downstream](screens/G_downstream.png)
 - **Click:** **G · Downstream**. You'll see before/after tables, a row of **four number tiles
   (2.4 / 2.2 / 1.76 / 0.2)**, and a hand-off table.
 - **✅ Worked when:** in the hand-off table, each row (Capital, IFRS 17) shows **DELIVERED** and a
@@ -195,6 +214,8 @@ say.** The numbers below are the real, verified figures.
   fabricate the capital or accounting result."*
 
 ### H — Prove it (reproduce the decision)
+
+![H_proveit](screens/H_proveit.png)
 - **Click:** **H · Prove it**, then the blue **"Reproduce from retained artifacts"** button.
 - **✅ Worked when:** every number re-computes from the saved record and shows **MATCH**; you also
   see a lineage chain and the committee memo.
@@ -202,6 +223,8 @@ say.** The numbers below are the real, verified figures.
   and every material number matches to the euro."*
 
 ### I — Close (the business case)
+
+![I_close](screens/I_close.png)
 - **Click:** **I · Close**. You'll see the updated position and four cards showing how this one
   workload grows into an estate.
 - **Presenter step (housekeeping):** open **🎛️ Presenter controls** and click **"Rehearsal reset
