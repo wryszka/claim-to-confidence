@@ -26,7 +26,11 @@ F = config.fqn
 
 
 def _token_ok(token):
-    return token == os.getenv("PRESENTER_TOKEN", "present")
+    # Fail closed: if PRESENTER_TOKEN is unset/empty, NO token works (presenter mutations
+    # disabled). No well-known default. This gate only keeps the scenario-state toggles off
+    # the audience path — the real authority boundary is the app SP's Unity Catalog grants.
+    expected = os.getenv("PRESENTER_TOKEN", "")
+    return bool(expected) and token == expected
 
 
 def _now():

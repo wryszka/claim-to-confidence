@@ -20,7 +20,9 @@ env:
   # the Discover screen then shows a documented setup path instead of a native link.
   - name: GENIE_SPACE_ID
     value: "01f1b0f57ec01b5885ad6f7cf2cd75a4"
-  # Presenter-utility token (spec §6). Change from the default before any shared run; the
-  # POST mutation endpoints require it, keeping them off the audience path.
+  # Presenter-utility token (spec §6). Gates the POST scenario-state toggles so they stay off
+  # the audience path — NOT a credential to real data (the app SP's Unity Catalog grants are the
+  # real boundary). The backend fails closed if this is unset. For a shared/public deploy, move
+  # this to a Databricks secret and reference it via valueFrom instead of an inline value.
   - name: PRESENTER_TOKEN
-    value: "present"
+    value: "c6410bb3308cf9a695608453"

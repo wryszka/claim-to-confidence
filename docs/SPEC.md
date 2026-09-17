@@ -360,7 +360,7 @@ Key functions:
 - `SUGGESTED` — the four suggested questions.
 
 **`server/presenter.py`** — the safe test-run controls (§6 of the brief). Every operation is a
-**POST**, requires the presenter token (`PRESENTER_TOKEN`, default `present`), and is scoped by
+**POST**, requires the presenter token (`PRESENTER_TOKEN`; no default — the backend fails closed if unset), and is scoped by
 `scenario_id`. It mutates **only** `0_cfg_scenario_state` and its own `PROP-REH-*` proposals; it
 never drops schemas, touches shared data, or deletes evidence.
 - `introduce_defect` — sets `defect_active=true` and bumps the candidate version → gate BLOCKS.

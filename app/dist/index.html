@@ -168,7 +168,7 @@ async function api(p){const r=await fetch(p);const j=await r.json();if(j&&j.erro
 async function post(p){const sep=p.includes("?")?"&":"?";const r=await fetch(p+sep+"token="+encodeURIComponent(PTOKEN),{method:"POST"});return r.json();}
 const m=v=>v==null?"—":`€${Number(v).toFixed(v%1===0?1:2)}m`;
 const signed=v=>`${v>=0?"+":"−"}€${Math.abs(v).toFixed(Math.abs(v)%1===0?1:2)}m`;
-const esc=s=>(s==null?"":String(s)).replace(/</g,"&lt;");
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
 function renderNav(){
   const n=$("#nav");n.innerHTML="";

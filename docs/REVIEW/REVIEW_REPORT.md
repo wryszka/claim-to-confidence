@@ -6,6 +6,7 @@
 - **Reviewed:** 2026-09-17 · live instance verified 2026-09-15 (preflight 8/8); reviewed against the deployed app + repo
 - **Verdict:** **NOT YET** — one **security blocker** (SQL injection, P0) must be fixed, and several P0 *rubric-alignment* gaps are open. The demo is **substantively excellent** (financial correctness, governance, honesty, reproducibility all strong); the gaps are largely because it was built to the "refined brief," not the playbook. Fastest path to **SHIP WITH ROADMAPPED GAPS**: fix the two security items (quick), then per P0 gap either close it (DAB, house palette, DEMO_QA, `esc()`) or consciously accept-with-rationale in `DECISIONS.md` (ACORD foundation = deliberate isolated fork; managed-agent-framework, Genie-embed, `advance_period` = roadmap).
 - **Scorecard (§6):** P0 ≈ **24/35** pass · P1 ≈ **16/26** pass (approximate — open items listed below).
+- **Update 2026-09-17 (post-review fix):** the **security blocker is FIXED and verified live** — `proposal_id` escaped (`journey.py:75`), `esc()` hardened to all HTML-dangerous chars (`index.html`), and the presenter token now **fails closed** with no `present` default (random token in `app.yaml`). Live checks: preflight 8/8; old token refused; `' OR '1'='1` → `NO_SUCH_PROPOSAL`. The remaining NOT-YET items are **Bricksurance-standard alignment** (DAB, managed agent, Genie-embed, house palette, ACORD foundation, `DEMO_QA`, GO·DO·SAY) — **deferred: this is not a Bricksurance demo yet**, so these are logged, not required now.
 
 **Severity:** `blocker` (a P0 fail or a deal-breaker) · `major` · `minor` · `nit`.
 **Status:** `fixed` · `roadmapped` · `wontfix (reason)` · `open`.
@@ -58,7 +59,7 @@
 
 | # | Finding | Severity | Status |
 |---|---|---|---|
-| 1 | **`esc()` (`app/dist/index.html:171`) escapes only `<`** — misses `>`,`&`,`"`,`'`, and isn't applied to every API/model string injected via `.innerHTML`. The agent answer and the **adversarial claim note** flow here → XSS-adjacent. | major | open |
+| 1 | **`esc()` (`app/dist/index.html:171`) escapes only `<`** — missed `>`,`&`,`"`,`'`. The agent answer and the **adversarial claim note** flow into `.innerHTML` → XSS-adjacent. | major | **fixed** — `esc()` now escapes `& < > " '` (verified) |
 | 2 | `presenter.approve` builds the `6_gov_decision` INSERT with several `prop[...]` values un-escaped (`presenter.py:170–179`) — defence-in-depth (values are DB-sourced). | minor | open |
 | 3 | `journey._empirical_factor_to_ultimate` interpolates `measure` into SQL (`journey.py`) — safe today (hardcoded "PAID"/"INCURRED") but should validate in-function. | minor | open |
 | 4 | `engine.py` duplicated in `tools/` and `app/server/` (kept in sync by hand) — add a `diff` pre-deploy guard to prevent drift. | minor | open |
@@ -70,8 +71,8 @@
 
 | # | Finding | Severity | Status |
 |---|---|---|---|
-| 1 | **SQL injection — `journey._proposal()` (`journey.py:75`).** `proposal_id` is interpolated **unescaped** into the WHERE clause; it flows from the `POST /api/presenter/approve?proposal_id=…` query param (`app.py`). `proposal_id=' OR '1'='1` bypasses the scenario filter. **Confirmed against the code.** (This is the one outlier — every other presenter query uses `sql.esc()`.) | **blocker (P0)** | open |
-| 2 | **Default `PRESENTER_TOKEN=present`** committed in `app.yaml` + docs + git history. Combined with #1, a known token + the injection is a real (demo-scoped) hole; violates §6.J "no secrets in code/history". | major | open |
+| 1 | **SQL injection — `journey._proposal()` (`journey.py:75`).** `proposal_id` was interpolated **unescaped** into the WHERE clause; reachable via `POST /api/presenter/approve?proposal_id=…`. `proposal_id=' OR '1'='1` bypassed the scenario filter. | **blocker (P0)** | **fixed** — `sql.esc(proposal_id)`; live `' OR '1'='1` → `NO_SUCH_PROPOSAL` |
+| 2 | **Default `PRESENTER_TOKEN=present`** committed in `app.yaml`/docs/history. Combined with #1, a known token + injection was a demo-scoped hole (§6.J). | major | **fixed** — token fails closed (no default; random value in app.yaml; docs de-published); old `present` now refused live |
 | 3 | Least-privilege grants (`tools/grants.py`) correct — MODIFY only on audit/ai_trace/scenario_state/proposal; the deny on decision/probe is the intended beat. | pass | — |
 | 4 | Prompt-injection handled (untrusted notes labelled DATA; agent read-only + trace); no data egress; no other secrets in history. | pass | — |
 
@@ -142,7 +143,12 @@ Multi-treaty/amendments · fitted CDFs + confidence intervals · why live-approv
 ---
 
 ## Applied fixes (summary)
-- None applied during this review — `/lr-demo-review` is read-only except this report. Fixes are proposed below.
+- **2026-09-17 — security blocker fixed + verified live** (post-review, at the user's request):
+  - `journey._proposal()` — `proposal_id` now `sql.esc()`-escaped (SQL injection closed).
+  - `app/dist/index.html` `esc()` — now escapes `& < > " '` (XSS-adjacent hole closed).
+  - `presenter._token_ok()` — fails closed (no `present` default); `app.yaml` uses a random token; docs de-published the value.
+  - Re-verified: `smoke_test` 43/43, `integration_test` 31/31, redeploy, preflight 8/8, injection → `NO_SUCH_PROPOSAL`, old token refused.
+- Nothing else changed — the remaining items are the read-only review's proposals below.
 
 ## Open / roadmapped (recommended order)
 1. **Security (do first, quick):** escape `proposal_id` in `journey._proposal()` (`sql.esc`); remove the hardcoded default `PRESENTER_TOKEN`; expand `esc()` in `index.html` to all HTML-dangerous chars and apply it to every `.innerHTML` API/model string. Re-run `integration_test.py`.

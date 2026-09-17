@@ -72,7 +72,7 @@ def _proposal(proposal_id=PROPOSAL_ID):
         f"SELECT proposal_id, scenario_id, selection_id, run_id, cohort, input_version, assumption_hash, "
         f"calc_version, selected_ultimate_eur, gross_outstanding_eur, gross_ibnr_eur, ceded_outstanding_eur, "
         f"net_outstanding_eur, proposal_hash, status, preparer, created_at FROM {F('6_gov_proposal')} "
-        f"WHERE scenario_id='{SCENARIO_ID}' AND proposal_id='{proposal_id}'")
+        f"WHERE scenario_id='{SCENARIO_ID}' AND proposal_id='{sql.esc(proposal_id)}'")
 
 
 # ── assemble the computed state (both valuations + finance + bridge), live ─────

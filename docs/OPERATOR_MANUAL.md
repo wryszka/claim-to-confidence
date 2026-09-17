@@ -91,7 +91,7 @@ Every screen has the same furniture, so once you know it, you know all nine:
     **Open it, type the presenter password once (it stays for your whole session), then use the
     buttons.**
 
-The presenter password is set by whoever deployed the app; the default word is **`present`**.
+The presenter password is set by whoever deployed the app (in `app.yaml`) — **ask the operator for it.** There is no default; the presenter controls stay disabled until it's set.
 
 The **🎛️ Presenter controls** panel looks like this (bottom of screen D, expanded) — the dark bar
 with the token box and the buttons:
@@ -239,8 +239,8 @@ say.** The numbers below are the real, verified figures.
 
 - **"I can't find the Presenter controls."** They are a **dark bar at the very bottom** of screens
   D, E, F and H, labelled **🎛️ Presenter controls**. Scroll down; click it to expand.
-- **"A presenter button says `unauthorised`."** You didn't type the password (default `present`)
-  in the box at the top of the Presenter controls panel. Type it and click again.
+- **"A presenter button says `unauthorised`."** You didn't type the presenter password (get it
+  from the operator) in the box at the top of the Presenter controls panel. Type it and click again.
 - **"The gate won't go back to RELEASED."** On screen D, click **"2 · Correct & revalidate."**
 - **"I don't know if the numbers are right."** They should be **exactly** 2.0 / 2.2 / 1.76 / 0.2
   (and on G, the four tiles 2.4 / 2.2 / 1.76 / 0.2). If they're different, the data was changed —
@@ -255,7 +255,7 @@ say.** The numbers below are the real, verified figures.
 | Claude shows an error box | the AI model is briefly unavailable | say so and move on — **the money story doesn't need the AI** |
 | A red "trace NOT persisted" badge | the audit log couldn't be written | note it honestly; the deployer re-checks permissions |
 | Gate stuck on **BLOCKED** | a defect was left on | screen D → **Correct & revalidate** |
-| Presenter button `unauthorised` | wrong/blank password | re-type `present` in Presenter controls |
+| Presenter button `unauthorised` | wrong/blank password | re-type the presenter password (from the operator) |
 | Whole app won't load | warehouse or app asleep/stopped | wait a minute; check the App admin page (§2) |
 
 If the workspace is totally unreachable, present `docs/EXEC_BRIEFING.md` and the screenshots in

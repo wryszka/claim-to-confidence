@@ -313,6 +313,8 @@ def patch(fake):
 
 
 def main():
+    import os
+    os.environ["PRESENTER_TOKEN"] = "present"  # presenter now fails closed unless a token is set
     import server.config as config
     config.get_workspace_client = lambda: (_ for _ in ()).throw(RuntimeError("no client in test"))
     import server.journey as journey
