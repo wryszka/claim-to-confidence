@@ -12,7 +12,7 @@ can you trust the number that comes out the other end, and can you prove how you
 > booked in finance, only the **€0.2m** residual is proposed for posting — never double-counted.
 
 This is an **isolated scenario instance** forked from the proven Reserving Workbench engine so
-it never touches the live Hiscox demo. Its executive screens are built to port into the Group
+it never touches the live Reserving Workbench demo. Its executive screens are built to port into the Group
 Control Tower (the estate front door) as a promoted journey.
 
 ## What is real

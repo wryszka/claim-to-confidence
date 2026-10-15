@@ -17,7 +17,7 @@ These were answered with reversible defaults because the user was asleep; all ar
    role harness.
 4. **Currency** — committed to EUR per the specification.
 5. **Vehicle** — built an **isolated scenario instance** (`claim-to-confidence`, own schema)
-   forked from the proven Reserving Workbench engine, so the live Hiscox demo is untouched.
+   forked from the proven Reserving Workbench engine, so the live Reserving Workbench demo is untouched.
    The executive screens are built to port into the Group Control Tower (the agreed production
    home); the standalone app is the reliable path to a wow Phase-1 demo.
 

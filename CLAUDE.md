@@ -4,7 +4,7 @@
 Isolated scenario instance implementing the "From Claim to Confidence" spec: one €2m claim
 correction traced through reserve → reinsurance → finance → capital for Bricksurance SE
 (fictional, synthetic). Forked from the Reserving Workbench engine so it never touches the
-live Hiscox demo. Executive screens built to port into the Group Control Tower.
+live Reserving Workbench demo. Executive screens built to port into the Group Control Tower.
 
 ## Non-negotiables (user instructions)
 - **Runs for real on Databricks** — real Unity Catalog tables + app SP; never fake. No
